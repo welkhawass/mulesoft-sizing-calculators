@@ -3,575 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Usage-Based Pricing — Simplified Sizing | MuleSoft Calculators</title>
+  <title>Usage-Based Pricing | MuleSoft Calculators</title>
   <link rel="stylesheet" href="../assets/style.css" />
-  <style>
-
-    /* ── Version badge ── */
-    .version-badge {
-      display: inline-block;
-      background: #e8f4fb;
-      color: #0070ad;
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 3px 10px;
-      border-radius: 12px;
-      vertical-align: middle;
-    }
-
-    /* ── Page toolbar ── */
-    .toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .toolbar-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .toolbar h2 {
-      font-size: 1.1rem;
-      color: #333;
-      margin: 0;
-    }
-
-    .btn-methodology {
-      background: none;
-      border: 1px solid #00a0df;
-      color: #00a0df;
-      padding: 5px 14px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-methodology:hover { background: #f0f8ff; }
-
-    .btn-export-pdf {
-      background: none;
-      border: 1px solid #0070ad;
-      color: #0070ad;
-      padding: 5px 14px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-export-pdf:hover { background: #e8f4fb; }
-
-    /* ── Full-page lock overlay ── */
-    .lock-overlay {
-      position: fixed;
-      inset: 0;
-      background: #0d1b2a;
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .lock-box {
-      background: #1a2a3a;
-      border: 1px solid #2a4a6a;
-      border-radius: 12px;
-      padding: 40px 48px;
-      text-align: center;
-      width: 360px;
-      max-width: 90vw;
-    }
-
-    .lock-box .lock-icon { font-size: 2.5rem; margin-bottom: 12px; }
-    .lock-box h3 { color: white; font-size: 1.1rem; margin: 0 0 6px; }
-    .lock-box p  { color: #7a9ab8; font-size: 0.82rem; margin: 0 0 24px; line-height: 1.5; }
-
-    .lock-box input[type="password"] {
-      width: 100%;
-      padding: 11px 14px;
-      border-radius: 6px;
-      border: 2px solid #2a4a6a;
-      background: #0d1b2a;
-      color: white;
-      font-size: 1rem;
-      text-align: center;
-      letter-spacing: 0.1em;
-      margin-bottom: 12px;
-      transition: border-color 0.2s;
-    }
-    .lock-box input[type="password"]:focus { outline: none; border-color: #00a0df; }
-    .lock-box input[type="password"]::placeholder { color: #3a5a7a; letter-spacing: 0; }
-
-    .lock-box .btn-unlock {
-      width: 100%;
-      background: #00a0df;
-      color: white;
-      border: none;
-      padding: 11px;
-      border-radius: 6px;
-      font-size: 0.95rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .lock-box .btn-unlock:hover { background: #0070ad; }
-
-    .lock-error {
-      color: #ff6b6b;
-      font-size: 0.8rem;
-      margin-top: 10px;
-      min-height: 1.2em;
-    }
-
-    /* ── Screen / print visibility helpers ── */
-    .print-only  { display: none; }
-    .screen-only { display: block; }
-
-    /* ── Print-only static settings layout ── */
-    .print-only-settings {
-      display: flex;
-      gap: 32px;
-      flex-wrap: wrap;
-    }
-    .print-setting-item { }
-    .print-setting-item .ps-label {
-      font-size: 0.73rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #888;
-      margin-bottom: 3px;
-    }
-    .print-setting-item .ps-value {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #333;
-    }
-
-    /* ── Print / PDF styles ── */
-    @media print {
-      /* hide everything not needed */
-      header, nav, .toolbar .btn-methodology, .toolbar .btn-export-pdf,
-      .btn-add-uc, .col-actions, .modal-overlay, footer,
-      .settings-bar label, .settings-bar select { }
-
-      header, nav, footer,
-      .btn-methodology, .btn-export-pdf,
-      .btn-add-uc, .col-actions,
-      .modal-overlay, .lock-overlay { display: none !important; }
-
-      .screen-only { display: none !important; }
-      .print-only  { display: block !important; }
-      .print-only-settings { display: flex !important; }
-
-      body { background: white; font-size: 11pt; }
-      main { max-width: 100%; margin: 0; padding: 0; }
-
-      .print-header { display: block !important; }
-
-      .settings-bar {
-        box-shadow: none;
-        border: 1px solid #e0e0e0;
-        padding: 10px 16px;
-        gap: 24px;
-      }
-
-      .table-card, .summary-card {
-        box-shadow: none;
-        border: 1px solid #e0e0e0;
-        break-inside: avoid;
-      }
-
-      .table-card-header { padding: 10px 16px; }
-      .summary-body      { padding: 14px 16px; }
-
-      .uc-table th, .uc-table td { padding: 7px 10px; font-size: 9pt; }
-
-      .summary-grid { grid-template-columns: repeat(3, 1fr); }
-
-      .pkg-row { border: 1px solid #ccc; background: #f9f9f9; }
-
-      a { text-decoration: none; color: inherit; }
-    }
-
-    /* ── Settings bar ── */
-    .settings-bar {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      padding: 16px 24px;
-      display: flex;
-      gap: 32px;
-      align-items: flex-end;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-    .settings-bar .form-group { margin-bottom: 0; min-width: 180px; }
-
-    /* ── Use cases table card ── */
-    .table-card {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      overflow: hidden;
-      margin-bottom: 20px;
-    }
-
-    .table-card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 20px;
-      border-bottom: 1px solid #eef2f6;
-    }
-
-    .table-card-header h3 {
-      font-size: 0.95rem;
-      color: #333;
-      margin: 0;
-    }
-
-    .btn-add-uc {
-      background: #00a0df;
-      color: white;
-      border: none;
-      padding: 8px 18px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .btn-add-uc:hover { background: #0070ad; }
-
-    /* ── Table ── */
-    .uc-table-wrap { overflow-x: auto; }
-
-    table.uc-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
-
-    .uc-table th {
-      background: #f4f8fc;
-      color: #666;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      padding: 10px 14px;
-      text-align: left;
-      white-space: nowrap;
-      border-bottom: 2px solid #e8edf2;
-    }
-
-    .uc-table td {
-      padding: 11px 14px;
-      border-bottom: 1px solid #f0f4f8;
-      vertical-align: middle;
-      white-space: nowrap;
-    }
-
-    .uc-table tr:last-child td { border-bottom: none; }
-    .uc-table tr:hover td { background: #fafcff; }
-
-    .uc-table .col-num   { width: 36px; color: #aaa; font-weight: 700; text-align: center; }
-    .uc-table .col-name  { min-width: 140px; color: #333; font-weight: 600; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
-    .uc-table .col-type  { min-width: 130px; }
-    .uc-table .col-metric { text-align: right; min-width: 90px; font-weight: 600; color: #0070ad; }
-    .uc-table .col-actions { width: 110px; text-align: right; }
-
-    .tag {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 0.73rem;
-      font-weight: 600;
-    }
-    .tag-api   { background: #e0f0ff; color: #0070ad; }
-    .tag-event { background: #e8f5e9; color: #2e7d32; }
-    .tag-sched { background: #fff3e0; color: #e65100; }
-    .tag-bidir { background: #f3e5f5; color: #6a1b9a; font-size: 0.68rem; margin-left: 4px; }
-
-    .btn-action {
-      background: none;
-      border: 1px solid #d0d7de;
-      color: #555;
-      padding: 4px 10px;
-      border-radius: 5px;
-      font-size: 0.75rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-left: 4px;
-    }
-    .btn-action:hover          { border-color: #00a0df; color: #00a0df; }
-    .btn-action.btn-del:hover  { border-color: #e55; color: #e55; }
-
-    /* ── Empty state ── */
-    .empty-state {
-      text-align: center;
-      padding: 48px 24px;
-      color: #bbb;
-    }
-    .empty-state p   { font-size: 0.95rem; margin-bottom: 16px; }
-    .empty-state button {
-      background: #00a0df;
-      color: white;
-      border: none;
-      padding: 10px 24px;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .empty-state button:hover { background: #0070ad; }
-
-    /* ── Summary card ── */
-    .summary-card {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      overflow: hidden;
-    }
-
-    .summary-header {
-      background: #0070ad;
-      color: white;
-      padding: 14px 24px;
-      font-size: 0.95rem;
-      font-weight: 600;
-    }
-
-    .summary-body { padding: 20px 24px; }
-
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-
-    .summary-metric {
-      background: #f4f8fc;
-      border-radius: 6px;
-      padding: 14px 16px;
-      border-left: 4px solid #00a0df;
-    }
-    .summary-metric .label { font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.05em; color: #888; margin-bottom: 6px; }
-    .summary-metric .value { font-size: 1.25rem; font-weight: 700; color: #0070ad; }
-    .summary-metric .sub   { font-size: 0.73rem; color: #aaa; margin-top: 2px; }
-
-    .pkg-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 20px;
-      padding: 16px;
-      border-radius: 8px;
-      border: 2px solid #00a0df;
-      background: #f0f8ff;
-    }
-    .pkg-badge         { background: #00a0df; color: white; font-size: 0.8rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; white-space: nowrap; align-self: flex-start; margin-top: 2px; }
-    .pkg-badge.advanced { background: #0070ad; }
-    .pkg-details .pkg-name   { font-weight: 700; font-size: 1rem; color: #0070ad; }
-    .pkg-details .pkg-price  { font-size: 1.4rem; font-weight: 700; color: #333; margin: 4px 0; }
-    .pkg-details .pkg-reason { font-size: 0.82rem; color: #666; }
-    .pkg-extras { font-size: 0.8rem; color: #888; margin-top: 8px; line-height: 1.6; }
-
-    .summary-empty { text-align: center; color: #bbb; padding: 32px; font-size: 0.9rem; }
-
-    /* ══════════════════════════════════════════
-       MODAL — shared base
-    ══════════════════════════════════════════ */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .modal-overlay.open { display: flex; }
-
-    .modal {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.2);
-      width: 100%;
-      max-width: 780px;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 24px;
-      border-bottom: 1px solid #eef2f6;
-      flex-shrink: 0;
-    }
-    .modal-header h3 { font-size: 1rem; color: #333; margin: 0; }
-    .btn-modal-close {
-      background: none; border: none; font-size: 1.3rem; color: #aaa;
-      cursor: pointer; padding: 0; line-height: 1;
-    }
-    .btn-modal-close:hover { color: #555; }
-
-    .modal-body {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0;
-      overflow-y: auto;
-      flex: 1;
-    }
-
-    .modal-inputs {
-      padding: 20px 24px;
-      border-right: 1px solid #eef2f6;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .modal-inputs .form-group { margin-bottom: 0; }
-
-    .modal-preview {
-      padding: 20px 24px;
-      background: #fafcff;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .modal-preview h4 {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #999;
-      margin-bottom: 4px;
-    }
-
-    .prev-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 12px;
-      background: white;
-      border-radius: 5px;
-      border: 1px solid #e8edf2;
-      font-size: 0.88rem;
-    }
-    .prev-row span:first-child { color: #666; }
-    .prev-row span:last-child  { font-weight: 700; color: #0070ad; }
-
-    .prev-placeholder { font-size: 0.8rem; color: #bbb; text-align: center; padding: 24px 0; }
-
-    /* Toggle */
-    .toggle-row { display: flex; align-items: center; justify-content: space-between; }
-    .toggle-row label { margin-bottom: 0; }
-    .toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
-    .toggle input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider {
-      position: absolute; inset: 0;
-      background: #ccc; border-radius: 22px; cursor: pointer; transition: background 0.2s;
-    }
-    .toggle-slider::before {
-      content: ''; position: absolute;
-      width: 16px; height: 16px; left: 3px; top: 3px;
-      background: white; border-radius: 50%; transition: transform 0.2s;
-    }
-    .toggle input:checked + .toggle-slider { background: #00a0df; }
-    .toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
-
-    /* Copy from previous */
-    .copy-banner {
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      background: #fff8e1;
-      border: 1px solid #ffe082;
-      border-radius: 6px;
-      padding: 8px 14px;
-      font-size: 0.82rem;
-      color: #795548;
-      margin-bottom: 4px;
-    }
-    .copy-banner.visible { display: flex; }
-    .btn-copy-prev {
-      background: none; border: 1px solid #f9a825; color: #f9a825;
-      padding: 3px 10px; border-radius: 4px; font-size: 0.78rem;
-      font-weight: 600; cursor: pointer; white-space: nowrap;
-    }
-    .btn-copy-prev:hover { background: #fff8e1; }
-
-    .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      padding: 14px 24px;
-      border-top: 1px solid #eef2f6;
-      flex-shrink: 0;
-    }
-    .btn-cancel {
-      background: white; color: #555; border: 1px solid #d0d7de;
-      padding: 9px 20px; border-radius: 6px; font-size: 0.9rem; cursor: pointer;
-    }
-    .btn-cancel:hover { background: #f5f5f5; }
-    .btn-save {
-      background: #00a0df; color: white; border: none;
-      padding: 9px 24px; border-radius: 6px; font-size: 0.9rem;
-      font-weight: 600; cursor: pointer;
-    }
-    .btn-save:hover { background: #0070ad; }
-
-    /* ══════════════════════════════════════════
-       METHODOLOGY MODAL
-    ══════════════════════════════════════════ */
-    .method-modal {
-      max-width: 640px;
-    }
-
-    .method-modal .modal-body {
-      display: block;
-      padding: 24px;
-    }
-
-    .method-section { margin-bottom: 24px; }
-    .method-section h4 { font-size: 0.9rem; color: #0070ad; margin-bottom: 8px; font-weight: 700; }
-    .method-section p  { font-size: 0.85rem; color: #555; line-height: 1.6; margin-bottom: 8px; }
-
-    .method-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 8px; }
-    .method-table th { background: #f4f8fc; padding: 7px 10px; text-align: left; font-weight: 700; color: #555; border: 1px solid #e8edf2; }
-    .method-table td { padding: 6px 10px; border: 1px solid #e8edf2; color: #444; }
-
-    .formula-box {
-      background: #f4f8fc;
-      border-left: 3px solid #00a0df;
-      padding: 10px 14px;
-      border-radius: 0 5px 5px 0;
-      font-family: monospace;
-      font-size: 0.82rem;
-      color: #333;
-      margin: 8px 0;
-    }
-
-    @media (max-width: 640px) {
-      .modal-body       { grid-template-columns: 1fr; }
-      .modal-inputs     { border-right: none; border-bottom: 1px solid #eef2f6; }
-      .summary-grid     { grid-template-columns: 1fr; }
-    }
-  </style>
+  <link rel="stylesheet" href="../assets/ubp.css" />
 </head>
 <body>
 
@@ -591,71 +25,141 @@
 
   <main>
 
-    <!-- Print-only header (hidden on screen) -->
+    <!-- Print-only header -->
     <div class="print-header" style="display:none; margin-bottom:20px;">
-      <h1 style="font-size:15pt; color:#0070ad; margin:0 0 4px;">MuleSoft — Usage-Based Pricing Simplified Sizing</h1>
-      <p style="font-size:9pt; color:#888; margin:0;" id="printMeta"></p>
+      <h1 style="font-size:15pt;color:#0070ad;margin:0 0 4px;">MuleSoft — Usage-Based Pricing Sizing</h1>
+      <p style="font-size:9pt;color:#888;margin:0;" id="printMeta"></p>
     </div>
 
     <!-- Toolbar -->
     <div class="toolbar">
       <div class="toolbar-left">
-        <h2>Usage-Based Pricing &mdash; Simplified Sizing</h2>
+        <h2 id="pageTitle">Usage-Based Pricing</h2>
         <span class="version-badge" id="versionBadge"></span>
       </div>
-      <div style="display:flex; gap:8px;">
+      <div style="display:flex;gap:8px;">
         <button class="btn-export-pdf" id="btnExportPDF">&#x2193; Export PDF</button>
         <button class="btn-methodology" id="btnMethodology">? Methodology</button>
       </div>
     </div>
 
-    <!-- Global settings -->
-    <div class="settings-bar">
-      <!-- Screen: form fields -->
-      <div class="form-group screen-only">
-        <label for="customerName">Customer Name</label>
-        <input type="text" id="customerName" placeholder="e.g. Acme Corp" style="min-width:200px;" />
-      </div>
-      <div class="form-group screen-only">
-        <label for="numEnvs">Number of Environments</label>
-        <select id="numEnvs">
-          <option value="2">2</option>
-          <option value="3" selected>3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-        </select>
-      </div>
-      <div class="form-group screen-only">
-        <label for="reusability">Reusability Index</label>
-        <select id="reusability">
-          <option value="0%">0%</option>
-          <option value="1-15%" selected>1-15%</option>
-          <option value="16-30%">16-30%</option>
-          <option value="31-45%">31-45%</option>
-          <option value="46-60%">46-60%</option>
-        </select>
-      </div>
-
-      <!-- Print-only: static summary of settings -->
-      <div class="print-only-settings print-only" id="printSettings"></div>
+    <!-- Mode tabs -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tabSimp" onclick="switchTab('simplified')">Simplified</button>
+      <button class="mode-tab"        id="tabDet"  onclick="switchTab('detailed')">Detailed</button>
     </div>
 
-    <!-- Use cases table -->
-    <div class="table-card">
-      <div class="table-card-header">
-        <h3>Use Cases <span id="ucCount" style="color:#aaa; font-weight:400; font-size:0.85rem;"></span></h3>
-        <button class="btn-add-uc" id="btnAddUC">+ Add Use Case</button>
-      </div>
-      <div id="tableArea"></div>
-    </div>
+    <!-- ══════════════════════════════════════════
+         SIMPLIFIED PANEL
+    ══════════════════════════════════════════ -->
+    <div id="panelSimplified">
 
-    <!-- Summary -->
-    <div class="summary-card">
-      <div class="summary-header">Sizing Summary &amp; Package Recommendation</div>
-      <div class="summary-body" id="summaryBody">
-        <div class="summary-empty">Add at least one use case to see sizing results.</div>
+      <!-- Settings bar -->
+      <div class="settings-bar">
+        <div class="form-group screen-only">
+          <label for="customerName">Customer Name</label>
+          <input type="text" id="customerName" placeholder="e.g. Acme Corp" style="min-width:200px;" />
+        </div>
+        <div class="form-group screen-only">
+          <label for="numEnvs">Number of Environments</label>
+          <select id="numEnvs">
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </div>
+        <div class="form-group screen-only">
+          <label for="reusability">Reusability Index</label>
+          <select id="reusability">
+            <option value="0%">0%</option>
+            <option value="1-15%" selected>1-15%</option>
+            <option value="16-30%">16-30%</option>
+            <option value="31-45%">31-45%</option>
+            <option value="46-60%">46-60%</option>
+          </select>
+        </div>
+        <div class="print-only-settings print-only" id="printSettings"></div>
       </div>
-    </div>
+
+      <!-- Use cases table -->
+      <div class="table-card">
+        <div class="table-card-header">
+          <h3>Use Cases <span id="simpUcCount" style="color:#aaa;font-weight:400;font-size:0.85rem;"></span></h3>
+          <button class="btn-add-uc" id="simpBtnAddUC">+ Add Use Case</button>
+        </div>
+        <div id="simpTableArea"></div>
+      </div>
+
+      <!-- Summary -->
+      <div class="summary-card">
+        <div class="summary-header">Sizing Summary &amp; Package Recommendation</div>
+        <div class="summary-body" id="simpSummaryBody">
+          <div class="summary-empty">Add at least one use case to see sizing results.</div>
+        </div>
+      </div>
+
+    </div><!-- /panelSimplified -->
+
+
+    <!-- ══════════════════════════════════════════
+         DETAILED PANEL
+    ══════════════════════════════════════════ -->
+    <div id="panelDetailed" style="display:none;">
+
+      <!-- Copy from simplified banner -->
+      <div class="copy-simp-banner" id="copySimpBanner">
+        <span>Copy your Simplified use cases into Detailed as a starting point?</span>
+        <button id="detBtnCopySimp">Copy from Simplified</button>
+      </div>
+
+      <!-- Environment settings -->
+      <div class="table-card" style="margin-bottom:20px;">
+        <div class="table-card-header"><h3>Environment &amp; Buffer Settings</h3></div>
+        <div style="padding:16px 24px;">
+          <div class="env-grid">
+            <div class="form-group"><label>Production Environments</label>
+              <input type="number" id="det-prodEnvs" value="1" min="1" max="10" /></div>
+            <div class="form-group"><label>Non-Prod Environments</label>
+              <input type="number" id="det-nonProdEnvs" value="2" min="1" max="10" /></div>
+            <div class="form-group"><label>HA Replicas</label>
+              <input type="number" id="det-haReplicas" value="2" min="2" max="8" /></div>
+            <div class="form-group"><label>Flows Buffer %</label>
+              <input type="number" id="det-flowsBuffer" value="10" min="0" max="100" /></div>
+            <div class="form-group"><label>Non-Prod Messages % of Prod</label>
+              <input type="number" id="det-msgNonProdPct" value="40" min="0" max="100" /></div>
+            <div class="form-group"><label>Messages Buffer %</label>
+              <input type="number" id="det-msgBuffer" value="5" min="0" max="100" /></div>
+            <div class="form-group"><label>Non-Prod Data % of Prod</label>
+              <input type="number" id="det-dataNonProdPct" value="40" min="0" max="100" /></div>
+            <div class="form-group"><label>Data Buffer %</label>
+              <input type="number" id="det-dataBuffer" value="5" min="0" max="100" /></div>
+            <div class="form-group"><label>Omni GW Non-Prod % of Prod</label>
+              <input type="number" id="det-omniNonProdPct" value="20" min="0" max="100" /></div>
+            <div class="form-group"><label>Omni GW Buffer %</label>
+              <input type="number" id="det-omniBuffer" value="10" min="0" max="100" /></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Use cases + components table -->
+      <div class="table-card">
+        <div class="table-card-header">
+          <h3>Use Cases &amp; Components <span id="detUcCount" style="color:#aaa;font-weight:400;font-size:0.85rem;"></span></h3>
+          <button class="btn-add-uc" id="detBtnAddUC">+ Add Use Case</button>
+        </div>
+        <div id="detTableArea"></div>
+      </div>
+
+      <!-- Detailed summary -->
+      <div class="summary-card">
+        <div class="summary-header">Detailed Sizing Summary &amp; Package Recommendation</div>
+        <div class="summary-body" id="detSummaryBody">
+          <div class="summary-empty">Add use cases and components to see sizing results.</div>
+        </div>
+      </div>
+
+    </div><!-- /panelDetailed -->
 
   </main>
 
@@ -663,96 +167,148 @@
 
 
   <!-- ══════════════════════════════════════════
-       USE CASE MODAL
+       SIMPLIFIED — Use Case Modal
   ══════════════════════════════════════════ -->
-  <div class="modal-overlay" id="ucModal">
+  <div class="modal-overlay" id="simpModal">
     <div class="modal">
       <div class="modal-header">
-        <h3 id="modalTitle">Add Use Case</h3>
-        <button class="btn-modal-close" id="btnModalClose">&#x2715;</button>
+        <h3 id="simpModalTitle">Add Use Case</h3>
+        <button class="btn-modal-close" id="simpBtnModalClose">&#x2715;</button>
       </div>
       <div class="modal-body">
         <div class="modal-inputs">
-
-          <!-- Copy from previous banner -->
-          <div class="copy-banner" id="copyBanner">
+          <div class="copy-banner" id="simpCopyBanner">
             <span>Copy settings from previous use case?</span>
-            <button class="btn-copy-prev" id="btnCopyPrev">Copy</button>
+            <button class="btn-copy-prev">Copy</button>
           </div>
-
           <div class="form-group">
             <label>Use Case Name <span style="color:#aaa;font-weight:400;">(optional)</span></label>
             <input type="text" id="m-name" placeholder="e.g. Order Management API" />
           </div>
-          <div class="form-group">
-            <label>Integration Type</label>
+          <div class="form-group"><label>Integration Type</label>
             <select id="m-intType">
               <option value="">— select —</option>
               <option>API/Microservices</option>
               <option>Event-Based</option>
               <option>Schedule-Based</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Systems to Integrate</label>
+            </select></div>
+          <div class="form-group"><label>Systems to Integrate</label>
             <select id="m-systems">
               <option value="">— select —</option>
-              <option>1-2</option>
-              <option>3-5</option>
-              <option>6-10</option>
-              <option>10+</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Business Objects</label>
+              <option>1-2</option><option>3-5</option><option>6-10</option><option>10+</option>
+            </select></div>
+          <div class="form-group"><label>Business Objects</label>
             <select id="m-bizObjects">
               <option value="">— select —</option>
-              <option>1-2</option>
-              <option>3-5</option>
-              <option>6-10</option>
-              <option>10+</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Tasks / Month</label>
+              <option>1-2</option><option>3-5</option><option>6-10</option><option>10+</option>
+            </select></div>
+          <div class="form-group"><label>Tasks / Month</label>
             <select id="m-tasks">
               <option value="">— select —</option>
-              <option>0-10K</option>
-              <option>10K-100K</option>
-              <option>100K-500K</option>
-              <option>500K-10M</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Avg Payload Size</label>
+              <option>0-10K</option><option>10K-100K</option><option>100K-500K</option><option>500K-10M</option>
+            </select></div>
+          <div class="form-group"><label>Avg Payload Size</label>
             <select id="m-payload">
               <option value="">— select —</option>
-              <option>0-100KB</option>
-              <option>101KB-500KB</option>
-              <option>501KB-1MB</option>
-              <option>1MB-10MB</option>
-              <option>10MB+</option>
-            </select>
-          </div>
+              <option>0-100KB</option><option>101KB-500KB</option><option>501KB-1MB</option>
+              <option>1MB-10MB</option><option>10MB+</option>
+            </select></div>
           <div class="form-group toggle-row">
             <label>Bidirectional?</label>
-            <label class="toggle">
-              <input type="checkbox" id="m-bidir" />
-              <span class="toggle-slider"></span>
-            </label>
+            <label class="toggle"><input type="checkbox" id="m-bidir" /><span class="toggle-slider"></span></label>
           </div>
         </div>
-
         <div class="modal-preview">
           <h4>Live Estimate</h4>
-          <div id="modalPreview">
-            <div class="prev-placeholder">Complete the inputs to see the estimate</div>
-          </div>
+          <div id="simpModalPreview"><div class="prev-placeholder">Complete the inputs to see the estimate</div></div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-cancel" id="btnModalCancel">Cancel</button>
-        <button class="btn-save"   id="btnModalSave">Save Use Case</button>
+        <button class="btn-cancel" id="simpBtnModalCancel">Cancel</button>
+        <button class="btn-save"   id="simpBtnModalSave">Save Use Case</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════
+       DETAILED — Use Case Modal
+  ══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="detUCModal">
+    <div class="modal" style="max-width:480px;">
+      <div class="modal-header">
+        <h3 id="detUCModalTitle">Add Use Case</h3>
+        <button class="btn-modal-close" id="detUCBtnClose">&#x2715;</button>
+      </div>
+      <div class="modal-body" style="display:block;padding:24px;">
+        <div class="form-group">
+          <label>Use Case Name</label>
+          <input type="text" id="det-uc-name" placeholder="e.g. Order Management" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="detUCBtnCancel">Cancel</button>
+        <button class="btn-save"   id="detUCBtnSave">Save</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════
+       DETAILED — Component Modal
+  ══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="detCompModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="detCompModalTitle">Add Component</h3>
+        <button class="btn-modal-close" id="detCompBtnClose">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-inputs">
+          <div class="form-group"><label>Component Name</label>
+            <input type="text" id="dc-name" placeholder="e.g. Order API - Process API" /></div>
+          <div class="form-group"><label>Integration Type</label>
+            <select id="dc-intType">
+              <option value="">— select —</option>
+              <option>API/Microservices</option>
+              <option>Event-Based</option>
+              <option>Schedule-Based</option>
+            </select></div>
+          <div class="form-group"><label>Implemented by</label>
+            <select id="dc-impl">
+              <option value="MuleSoft">MuleSoft</option>
+              <option value="Omni Gateway">Omni Gateway</option>
+            </select></div>
+          <div class="form-group"><label>Tasks</label>
+            <input type="number" id="dc-tasks" placeholder="e.g. 1000" min="0" /></div>
+          <div class="form-group"><label>Per</label>
+            <select id="dc-taskPeriod">
+              <option>Second</option><option>Minute</option><option>Hour</option>
+              <option>Day</option><option value="Month" selected>Month</option><option>Year</option>
+            </select></div>
+          <div class="form-group"><label>Business Hours / Day</label>
+            <input type="number" id="dc-bizHours" value="8" min="1" max="24" /></div>
+          <div class="form-group"><label>Business Days / Year</label>
+            <input type="number" id="dc-bizDays" value="220" min="1" max="365" /></div>
+          <div class="form-group"><label>Avg Payload (KB)</label>
+            <input type="number" id="dc-payloadKB" value="50" min="1" /></div>
+          <div class="form-group toggle-row">
+            <label>HA Required?</label>
+            <label class="toggle"><input type="checkbox" id="dc-ha" /><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="modal-preview">
+          <h4>Component Info</h4>
+          <p style="font-size:0.82rem;color:#888;line-height:1.6;padding:8px 0;">
+            Fill in Tasks and Period to quantify message volume.<br/>
+            Payload size determines data throughput.<br/>
+            Omni Gateway components are counted separately for API call sizing.
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="detCompBtnCancel">Cancel</button>
+        <button class="btn-save"   id="detCompBtnSave">Save Component</button>
       </div>
     </div>
   </div>
@@ -762,67 +318,48 @@
        METHODOLOGY MODAL
   ══════════════════════════════════════════ -->
   <div class="modal-overlay" id="methodModal">
-    <div class="modal method-modal">
+    <div class="modal" style="max-width:640px;">
       <div class="modal-header">
         <h3>Calculation Methodology</h3>
         <button class="btn-modal-close" id="btnMethodClose">&#x2715;</button>
       </div>
-      <div class="modal-body">
-
+      <div class="modal-body" style="display:block;padding:24px;overflow-y:auto;">
         <div class="method-section">
           <h4>Source</h4>
-          <p>All lookup tables, prices, and formulas in this calculator are derived from the official MuleSoft UBP sizing workbook. The version is shown on the page header.</p>
+          <p>All lookup tables, prices, and formulas are derived from the official MuleSoft UBP sizing workbook. Version shown in the page header.</p>
         </div>
-
         <div class="method-section">
-          <h4>Step 1 — Flows (T-shirt sizing)</h4>
-          <p>Flows represent code complexity — how many Mule flows are needed to implement the integration. They are determined by a two-axis T-shirt size matrix:</p>
-          <table class="method-table">
-            <tr><th>Systems \ Business Objects</th><th>1-2</th><th>3-5</th><th>6-10</th><th>10+</th></tr>
-            <tr><td>1-2 systems</td><td>S</td><td>M</td><td>L</td><td>XL</td></tr>
-            <tr><td>3-5 systems</td><td>M</td><td>L</td><td>XL</td><td>XXL</td></tr>
-            <tr><td>6-10 systems</td><td>L</td><td>XL</td><td>XXL</td><td>XXL</td></tr>
-            <tr><td>10+ systems</td><td>XL</td><td>XXL</td><td>XXL</td><td>XXL</td></tr>
-          </table>
-          <p style="margin-top:10px;">T-shirt size maps to flow count by integration type:</p>
-          <table class="method-table">
-            <tr><th>Type</th><th>S</th><th>M</th><th>L</th><th>XL</th><th>XXL</th></tr>
-            <tr><td>API/Microservices</td><td>5</td><td>10</td><td>15</td><td>20</td><td>40</td></tr>
-            <tr><td>Event-Based</td><td>2</td><td>5</td><td>10</td><td>15</td><td>20</td></tr>
-            <tr><td>Schedule-Based</td><td>3</td><td>5</td><td>7</td><td>10</td><td>20</td></tr>
-          </table>
-          <p style="margin-top:10px;"><strong>Flows do not scale with environments</strong> — the same application code is deployed to each environment; you do not write more flows per environment.</p>
+          <h4>Simplified — Flows (T-shirt sizing)</h4>
+          <p>Flows are determined by a two-axis matrix: Systems × Business Objects → T-shirt size (S/M/L/XL/XXL) → flow count by integration type. Flows do not scale with environments.</p>
         </div>
-
         <div class="method-section">
-          <h4>Step 2 — Messages / Month</h4>
-          <div class="formula-box">messages = tasks_range × bidir_multiplier × (1 − reusability_factor) × num_environments</div>
-          <p><strong>Tasks range</strong>: min/max messages derived from selected tasks/month bucket (e.g. 0-10K → 1K–10K base messages).</p>
-          <p><strong>Bidirectional multiplier</strong>: ×2 when enabled (messages flow in both directions).</p>
-          <p><strong>Reusability factor</strong>: reduces volume when flows are reused across use cases (e.g. 16-30% → subtract 25%).</p>
-          <p><strong>Environments</strong>: each environment processes messages independently (dev, UAT, prod), so total platform consumption scales linearly.</p>
+          <h4>Simplified — Messages / Month</h4>
+          <div class="formula-box">messages = tasks_range × bidir_multiplier × (1 − reusability) × num_environments</div>
         </div>
-
         <div class="method-section">
-          <h4>Step 3 — Data Throughput / Month</h4>
-          <div class="formula-box">data_GB = messages × avg_payload_KB × direction_factor / 1,048,576</div>
-          <p><strong>Direction factor</strong>: 4 for bidirectional (2 directions × 2 transforms in/out), 2 for unidirectional.</p>
-          <p>Payload range mid-point is used for the live estimate; min/max payload values produce the shown range.</p>
+          <h4>Simplified — Data Throughput / Month</h4>
+          <div class="formula-box">data_GB = messages × payload_KB × direction_factor / 1,048,576</div>
+          <p>Direction factor: 4 for bidirectional, 2 for unidirectional.</p>
         </div>
-
         <div class="method-section">
-          <h4>Step 4 — Package Recommendation</h4>
-          <p>Starter is recommended unless any of the following thresholds are exceeded:</p>
+          <h4>Detailed — Messages (annual)</h4>
+          <div class="formula-box">annual = tasks × time_multiplier(period, bizHours, bizDays)</div>
+          <p>Multipliers: Second=3600×hours×days, Minute=60×hours×days, Hour=hours×days, Day=days, Month=12, Year=1.</p>
+        </div>
+        <div class="method-section">
+          <h4>Detailed — Omni Gateway</h4>
+          <p>Components marked as "Omni Gateway" represent APIs hosted outside Anypoint Platform that will be managed through it. Their task volume counts as Omni Gateway API calls, sized separately from MuleSoft runtime messages.</p>
+        </div>
+        <div class="method-section">
+          <h4>Package Recommendation</h4>
           <table class="method-table">
             <tr><th>Metric</th><th>Starter limit</th><th>Advanced limit</th></tr>
             <tr><td>Flows</td><td>50</td><td>200</td></tr>
             <tr><td>Messages / year</td><td>5M</td><td>20M</td></tr>
-            <tr><td>Data Throughput / year</td><td>10 GB</td><td>40 GB</td></tr>
+            <tr><td>Data / year</td><td>10 GB</td><td>40 GB</td></tr>
           </table>
-          <p style="margin-top:10px;">If requirements exceed Advanced limits, additional capacity is priced using a power-law curve (higher volume = lower unit rate).</p>
-          <p>List prices shown are pre-discount. Actual selling price depends on deal size and approval level — not shown in this tool.</p>
+          <p style="margin-top:10px;">List prices shown are pre-discount. Actual price depends on deal negotiation.</p>
         </div>
-
       </div>
       <div class="modal-footer">
         <button class="btn-save" id="btnMethodDone">Close</button>
@@ -831,7 +368,9 @@
   </div>
 
 
-  <!-- Full-page lock overlay -->
+  <!-- ══════════════════════════════════════════
+       LOCK OVERLAY
+  ══════════════════════════════════════════ -->
   <div class="lock-overlay" id="lockOverlay">
     <div class="lock-box">
       <div class="lock-icon">&#128274;</div>
@@ -843,331 +382,82 @@
     </div>
   </div>
 
+
   <script src="../assets/ubp-data.js"></script>
   <script src="../assets/ubp-calc.js"></script>
+  <script src="../assets/ubp-simplified.js"></script>
+  <script src="../assets/ubp-detailed.js"></script>
   <script>
+
     // ── Version badge ──
     document.getElementById('versionBadge').textContent = 'Based on UBP v' + UBP_VERSION;
 
-    // ── State ──
-    let useCases = [];   // array of { name, intType, systems, bizObjects, tasks, payload, bidir }
-    let editingIndex = -1;  // -1 = new, >= 0 = editing
-
-    // ── Globals ──
-    function getGlobals() {
-      return {
-        numEnvs:        parseInt(document.getElementById('numEnvs').value, 10),
-        reusabilityKey: document.getElementById('reusability').value
-      };
+    // ── Tab switching ──
+    function switchTab(mode) {
+      var isSimp = mode === 'simplified';
+      document.getElementById('panelSimplified').style.display = isSimp ? '' : 'none';
+      document.getElementById('panelDetailed').style.display   = isSimp ? 'none' : '';
+      document.getElementById('tabSimp').classList.toggle('active', isSimp);
+      document.getElementById('tabDet').classList.toggle('active', !isSimp);
+      document.getElementById('pageTitle').textContent = isSimp
+        ? 'Usage-Based Pricing — Simplified Sizing'
+        : 'Usage-Based Pricing — Detailed Sizing';
+      // Show copy banner in detailed only when simplified has data
+      var banner = document.getElementById('copySimpBanner');
+      banner.style.display = (!isSimp && simpUseCases.length > 0) ? 'flex' : 'none';
     }
-
-    // ── Table rendering ──
-    function typeTag(type) {
-      if (!type) return '';
-      if (type === 'API/Microservices') return '<span class="tag tag-api">API</span>';
-      if (type === 'Event-Based')       return '<span class="tag tag-event">Event</span>';
-      if (type === 'Schedule-Based')    return '<span class="tag tag-sched">Schedule</span>';
-      return type;
-    }
-
-    function renderTable() {
-      const area = document.getElementById('tableArea');
-      const count = document.getElementById('ucCount');
-      count.textContent = useCases.length ? `(${useCases.length})` : '';
-
-      if (useCases.length === 0) {
-        area.innerHTML = `
-          <div class="empty-state">
-            <p>No use cases yet. Add your first one to start sizing.</p>
-            <button onclick="openModal(-1)">+ Add Use Case</button>
-          </div>`;
-        return;
-      }
-
-      const { numEnvs, reusabilityKey } = getGlobals();
-
-      let rows = '';
-      useCases.forEach((uc, i) => {
-        const result = calcRow(uc, numEnvs, reusabilityKey);
-        const flows   = result ? result.flows : '—';
-        const msgs    = result ? fmtMRange(result.msgMin, result.msgMax) : '—';
-        const data    = result ? fmtGBRange(result.dataMinGB, result.dataMaxGB) : '—';
-        const bidirTag = uc.bidir ? '<span class="tag tag-bidir">2-way</span>' : '';
-        const name     = uc.name || `<span style="color:#aaa">Use Case ${i + 1}</span>`;
-
-        rows += `
-          <tr>
-            <td class="col-num">${i + 1}</td>
-            <td class="col-name">${name}</td>
-            <td class="col-type">${typeTag(uc.intType)}${bidirTag}</td>
-            <td>${uc.tasks || '—'}</td>
-            <td>${uc.payload || '—'}</td>
-            <td class="col-metric">${flows}</td>
-            <td class="col-metric">${msgs}</td>
-            <td class="col-metric">${data}</td>
-            <td class="col-actions">
-              <button class="btn-action" onclick="openModal(${i})">Edit</button>
-              <button class="btn-action btn-del" onclick="deleteUC(${i})">Delete</button>
-            </td>
-          </tr>`;
-      });
-
-      area.innerHTML = `
-        <div class="uc-table-wrap">
-          <table class="uc-table">
-            <thead>
-              <tr>
-                <th class="col-num">#</th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Tasks/mo</th>
-                <th>Payload</th>
-                <th class="col-metric">Flows</th>
-                <th class="col-metric">Messages/mo</th>
-                <th class="col-metric">Data/mo</th>
-                <th class="col-actions"></th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>`;
-    }
-
-    // ── Summary rendering ──
-    function renderSummary() {
-      const el = document.getElementById('summaryBody');
-      const { numEnvs, reusabilityKey } = getGlobals();
-
-      const results = useCases.map(uc => calcRow(uc, numEnvs, reusabilityKey)).filter(Boolean);
-
-      if (results.length === 0) {
-        el.innerHTML = '<div class="summary-empty">Add at least one use case to see sizing results.</div>';
-        return;
-      }
-
-      const totals = calcTotals(results);
-      const rec    = recommendPackage(totals);
-      const annMsgMinM = totals.annualMsgMin / 1e6;
-      const annMsgMaxM = totals.annualMsgMax / 1e6;
-
-      el.innerHTML = `
-        <div class="summary-grid">
-          <div class="summary-metric">
-            <div class="label">Total Flows</div>
-            <div class="value">${totals.totalFlows}</div>
-            <div class="sub">across all use cases</div>
-          </div>
-          <div class="summary-metric">
-            <div class="label">Messages / Year</div>
-            <div class="value">${fmtM(annMsgMinM)} &ndash; ${fmtM(annMsgMaxM)}</div>
-            <div class="sub">annualised estimate</div>
-          </div>
-          <div class="summary-metric">
-            <div class="label">Data Throughput / Year</div>
-            <div class="value">${fmtGB(totals.annualDataMin)}</div>
-            <div class="sub">min estimate</div>
-          </div>
-        </div>
-        <div class="pkg-row">
-          <div class="pkg-badge ${rec.name === 'Advanced' ? 'advanced' : ''}">${rec.name}</div>
-          <div class="pkg-details">
-            <div class="pkg-name">Integration ${rec.name} Package</div>
-            <div class="pkg-price">${fmtUSD(rec.totalListPrice)} <span style="font-size:0.85rem;font-weight:400;color:#888;">/ year (list price, USD)</span></div>
-            <div class="pkg-reason">${rec.reasons.join(' &bull; ')}</div>
-            ${rec.extraFlows > 0 || rec.extraMsgM > 0 || rec.extraDataGB > 0 ? `
-            <div class="pkg-extras">
-              Additional capacity beyond package:
-              ${rec.extraFlows  > 0 ? `${rec.extraFlows} extra flows &nbsp;&bull;&nbsp;` : ''}
-              ${rec.extraMsgM   > 0 ? `${rec.extraMsgM.toFixed(1)}M extra messages &nbsp;&bull;&nbsp;` : ''}
-              ${rec.extraDataGB > 0 ? `${fmtGB(rec.extraDataGB)} extra data` : ''}
-            </div>` : ''}
-          </div>
-        </div>`;
-    }
-
-    function refreshAll() {
-      renderTable();
-      renderSummary();
-    }
-
-    // ── Delete ──
-    function deleteUC(i) {
-      useCases.splice(i, 1);
-      refreshAll();
-    }
-
-    // ── Modal: open ──
-    function openModal(index) {
-      editingIndex = index;
-      const isNew = index === -1;
-
-      document.getElementById('modalTitle').textContent = isNew ? 'Add Use Case' : 'Edit Use Case';
-
-      // Show copy banner only for new use cases when there's at least one existing
-      const banner = document.getElementById('copyBanner');
-      if (isNew && useCases.length > 0) {
-        banner.classList.add('visible');
-      } else {
-        banner.classList.remove('visible');
-      }
-
-      if (isNew) {
-        document.getElementById('m-name').value       = '';
-        document.getElementById('m-intType').value    = '';
-        document.getElementById('m-systems').value    = '';
-        document.getElementById('m-bizObjects').value = '';
-        document.getElementById('m-tasks').value      = '';
-        document.getElementById('m-payload').value    = '';
-        document.getElementById('m-bidir').checked    = false;
-      } else {
-        const uc = useCases[index];
-        document.getElementById('m-name').value       = uc.name || '';
-        document.getElementById('m-intType').value    = uc.intType;
-        document.getElementById('m-systems').value    = uc.systems;
-        document.getElementById('m-bizObjects').value = uc.bizObjects;
-        document.getElementById('m-tasks').value      = uc.tasks;
-        document.getElementById('m-payload').value    = uc.payload;
-        document.getElementById('m-bidir').checked    = uc.bidir;
-      }
-
-      updateModalPreview();
-      document.getElementById('ucModal').classList.add('open');
-      document.getElementById('m-name').focus();
-    }
-
-    // ── Modal: copy from previous ──
-    document.getElementById('btnCopyPrev').addEventListener('click', () => {
-      const prev = useCases[useCases.length - 1];
-      if (!prev) return;
-      document.getElementById('m-intType').value    = prev.intType;
-      document.getElementById('m-systems').value    = prev.systems;
-      document.getElementById('m-bizObjects').value = prev.bizObjects;
-      document.getElementById('m-tasks').value      = prev.tasks;
-      document.getElementById('m-payload').value    = prev.payload;
-      document.getElementById('m-bidir').checked    = prev.bidir;
-      updateModalPreview();
-    });
-
-    // ── Modal: live preview ──
-    function readModalInputs() {
-      return {
-        name:       document.getElementById('m-name').value.trim(),
-        intType:    document.getElementById('m-intType').value,
-        systems:    document.getElementById('m-systems').value,
-        bizObjects: document.getElementById('m-bizObjects').value,
-        tasks:      document.getElementById('m-tasks').value,
-        payload:    document.getElementById('m-payload').value,
-        bidir:      document.getElementById('m-bidir').checked
-      };
-    }
-
-    function updateModalPreview() {
-      const { numEnvs, reusabilityKey } = getGlobals();
-      const uc     = readModalInputs();
-      const result = calcRow(uc, numEnvs, reusabilityKey);
-      const el     = document.getElementById('modalPreview');
-
-      if (!result) {
-        el.innerHTML = '<div class="prev-placeholder">Complete the inputs to see the estimate</div>';
-        return;
-      }
-      el.innerHTML = `
-        <div class="prev-row"><span>Flows</span><span>${result.flows}</span></div>
-        <div class="prev-row"><span>Messages / month</span><span>${fmtMRange(result.msgMin, result.msgMax)}</span></div>
-        <div class="prev-row"><span>Data / month</span><span>${fmtGBRange(result.dataMinGB, result.dataMaxGB)}</span></div>`;
-    }
-
-    // Wire up modal input changes to live preview
-    ['m-intType','m-systems','m-bizObjects','m-tasks','m-payload','m-bidir'].forEach(id => {
-      const el = document.getElementById(id);
-      el.addEventListener('change', updateModalPreview);
-    });
-
-    // ── Modal: save ──
-    document.getElementById('btnModalSave').addEventListener('click', () => {
-      const uc = readModalInputs();
-      if (editingIndex === -1) {
-        useCases.push(uc);
-      } else {
-        useCases[editingIndex] = uc;
-      }
-      closeUCModal();
-      refreshAll();
-    });
-
-    function closeUCModal() {
-      document.getElementById('ucModal').classList.remove('open');
-    }
-
-    document.getElementById('btnModalClose').addEventListener('click',  closeUCModal);
-    document.getElementById('btnModalCancel').addEventListener('click', closeUCModal);
-
-    // Close on overlay click
-    document.getElementById('ucModal').addEventListener('click', e => {
-      if (e.target === document.getElementById('ucModal')) closeUCModal();
-    });
-
-    // ── Add use case button ──
-    document.getElementById('btnAddUC').addEventListener('click', () => openModal(-1));
-
-    // ── Global settings change ──
-    document.getElementById('numEnvs').addEventListener('change',   refreshAll);
-    document.getElementById('reusability').addEventListener('change', refreshAll);
 
     // ── Methodology modal ──
-    document.getElementById('btnMethodology').addEventListener('click', () => {
+    document.getElementById('btnMethodology').addEventListener('click', function() {
       document.getElementById('methodModal').classList.add('open');
     });
-    document.getElementById('btnMethodClose').addEventListener('click', () => {
+    document.getElementById('btnMethodClose').addEventListener('click', function() {
       document.getElementById('methodModal').classList.remove('open');
     });
-    document.getElementById('btnMethodDone').addEventListener('click', () => {
+    document.getElementById('btnMethodDone').addEventListener('click', function() {
       document.getElementById('methodModal').classList.remove('open');
     });
-    document.getElementById('methodModal').addEventListener('click', e => {
+    document.getElementById('methodModal').addEventListener('click', function(e) {
       if (e.target === document.getElementById('methodModal'))
         document.getElementById('methodModal').classList.remove('open');
     });
 
     // ── Export PDF ──
-    document.getElementById('btnExportPDF').addEventListener('click', () => {
-      const { numEnvs, reusabilityKey } = getGlobals();
-      const customer = document.getElementById('customerName').value.trim();
-      const date = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
-
-      // Populate print-only static settings block
-      const fields = [];
+    document.getElementById('btnExportPDF').addEventListener('click', function() {
+      var numEnvs       = parseInt(document.getElementById('numEnvs').value, 10);
+      var reusabilityKey = document.getElementById('reusability').value;
+      var customer      = document.getElementById('customerName').value.trim();
+      var date          = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
+      var fields = [];
       if (customer) fields.push({ label: 'Customer', value: customer });
       fields.push(
-        { label: 'Environments',     value: numEnvs },
+        { label: 'Environments',      value: numEnvs },
         { label: 'Reusability Index', value: reusabilityKey },
         { label: 'Generated',         value: date },
         { label: 'Based on',          value: 'UBP v' + UBP_VERSION }
       );
-      document.getElementById('printSettings').innerHTML = fields.map(f => `
-        <div class="print-setting-item">
-          <div class="ps-label">${f.label}</div>
-          <div class="ps-value">${f.value}</div>
-        </div>`).join('');
-
-      // Keep print meta line as fallback
-      const customerPart = customer ? `Customer: ${customer}  |  ` : '';
+      document.getElementById('printSettings').innerHTML = fields.map(function(f) {
+        return '<div class="print-setting-item"><div class="ps-label">' + f.label +
+               '</div><div class="ps-value">' + f.value + '</div></div>';
+      }).join('');
+      var cp = customer ? 'Customer: ' + customer + '  |  ' : '';
       document.getElementById('printMeta').textContent =
-        `${customerPart}Generated: ${date}  |  Environments: ${numEnvs}  |  Reusability: ${reusabilityKey}  |  ${UBP_SOURCE}`;
-
+        cp + 'Generated: ' + date + '  |  Environments: ' + numEnvs +
+        '  |  Reusability: ' + reusabilityKey + '  |  ' + UBP_SOURCE;
       window.print();
     });
 
     // ── Init & lock ──
     (function() {
-      const SESSION_KEY = 'ubp_unlocked';
-      const overlay     = document.getElementById('lockOverlay');
-      const input       = document.getElementById('accessCodeInput');
-      const errorEl     = document.getElementById('lockError');
+      var SESSION_KEY = 'ubp_unlocked';
+      var overlay     = document.getElementById('lockOverlay');
+      var input       = document.getElementById('accessCodeInput');
+      var errorEl     = document.getElementById('lockError');
 
       function unlock() {
         overlay.style.display = 'none';
-        refreshAll();
+        simpRefresh();
+        detRefresh();
       }
 
       function tryUnlock() {
@@ -1182,15 +472,15 @@
       }
 
       document.getElementById('btnUnlock').addEventListener('click', tryUnlock);
-      input.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+      input.addEventListener('keydown', function(e) { if (e.key === 'Enter') tryUnlock(); });
 
-      // Already unlocked this session?
-      if (sessionStorage.getItem(SESSION_KEY) === '1') {
-        unlock();
-      } else {
-        input.focus();
-      }
+      simpInitEvents();
+      detInitEvents();
+
+      if (sessionStorage.getItem(SESSION_KEY) === '1') unlock();
+      else input.focus();
     })();
+
   </script>
 
 </body>
