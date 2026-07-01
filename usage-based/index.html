@@ -55,6 +55,61 @@
     }
     .btn-methodology:hover { background: #f0f8ff; }
 
+    .btn-export-pdf {
+      background: none;
+      border: 1px solid #0070ad;
+      color: #0070ad;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-export-pdf:hover { background: #e8f4fb; }
+
+    /* ── Print / PDF styles ── */
+    @media print {
+      /* hide everything not needed */
+      header, nav, .toolbar .btn-methodology, .toolbar .btn-export-pdf,
+      .btn-add-uc, .col-actions, .modal-overlay, footer,
+      .settings-bar label, .settings-bar select { }
+
+      header, nav, footer,
+      .btn-methodology, .btn-export-pdf,
+      .btn-add-uc, .col-actions,
+      .modal-overlay { display: none !important; }
+
+      body { background: white; font-size: 11pt; }
+      main { max-width: 100%; margin: 0; padding: 0; }
+
+      .print-header { display: block !important; }
+
+      .settings-bar {
+        box-shadow: none;
+        border: 1px solid #e0e0e0;
+        padding: 10px 16px;
+        gap: 24px;
+      }
+
+      .table-card, .summary-card {
+        box-shadow: none;
+        border: 1px solid #e0e0e0;
+        break-inside: avoid;
+      }
+
+      .table-card-header { padding: 10px 16px; }
+      .summary-body      { padding: 14px 16px; }
+
+      .uc-table th, .uc-table td { padding: 7px 10px; font-size: 9pt; }
+
+      .summary-grid { grid-template-columns: repeat(3, 1fr); }
+
+      .pkg-row { border: 1px solid #ccc; background: #f9f9f9; }
+
+      a { text-decoration: none; color: inherit; }
+    }
+
     /* ── Settings bar ── */
     .settings-bar {
       background: white;
@@ -446,13 +501,22 @@
 
   <main>
 
+    <!-- Print-only header (hidden on screen) -->
+    <div class="print-header" style="display:none; margin-bottom:20px;">
+      <h1 style="font-size:15pt; color:#0070ad; margin:0 0 4px;">MuleSoft — Usage-Based Pricing Simplified Sizing</h1>
+      <p style="font-size:9pt; color:#888; margin:0;" id="printMeta"></p>
+    </div>
+
     <!-- Toolbar -->
     <div class="toolbar">
       <div class="toolbar-left">
         <h2>Usage-Based Pricing &mdash; Simplified Sizing</h2>
         <span class="version-badge" id="versionBadge"></span>
       </div>
-      <button class="btn-methodology" id="btnMethodology">? Methodology</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-export-pdf" id="btnExportPDF">&#x2193; Export PDF</button>
+        <button class="btn-methodology" id="btnMethodology">? Methodology</button>
+      </div>
     </div>
 
     <!-- Global settings -->
@@ -953,6 +1017,15 @@
     document.getElementById('methodModal').addEventListener('click', e => {
       if (e.target === document.getElementById('methodModal'))
         document.getElementById('methodModal').classList.remove('open');
+    });
+
+    // ── Export PDF ──
+    document.getElementById('btnExportPDF').addEventListener('click', () => {
+      const { numEnvs, reusabilityKey } = getGlobals();
+      const date = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+      document.getElementById('printMeta').textContent =
+        `Generated: ${date}  |  Environments: ${numEnvs}  |  Reusability: ${reusabilityKey}  |  ${UBP_SOURCE}`;
+      window.print();
     });
 
     // ── Init ──
