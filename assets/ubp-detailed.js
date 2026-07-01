@@ -23,23 +23,43 @@ function detGetEnvSettings() {
   };
 }
 
+// ── Bucket → midpoint conversions for copy-from-simplified ──
+var TASKS_BUCKET_MAP = {
+  '0-10K':     5000,
+  '10K-100K':  55000,
+  '100K-500K': 300000,
+  '500K-10M':  5000000
+};
+
+var PAYLOAD_BUCKET_MAP = {
+  '0-100KB':     50,
+  '101KB-500KB': 300,
+  '501KB-1MB':   750,
+  '1MB-10MB':    5000,
+  '10MB+':       50000
+};
+
 // ── Copy from Simplified ──
 function detCopyFromSimplified() {
   if (simpUseCases.length === 0) return;
   detUseCases = simpUseCases.map(function(uc) {
-    var compName = (uc.name || 'Use Case') + ' - Process API';
+    var compName  = (uc.name || 'Use Case') + ' - Process API';
+    var baseTasks = TASKS_BUCKET_MAP[uc.tasks]   || 5000;
+    var payloadKB = PAYLOAD_BUCKET_MAP[uc.payload] || 50;
+    // Bidirectional doubles the effective task volume (same as simplified logic)
+    var tasks     = uc.bidir ? baseTasks * 2 : baseTasks;
     return {
       name: uc.name || '',
       components: [{
-        name:        compName,
-        intType:     uc.intType,
-        impl:        'MuleSoft',
-        tasks:       '',
-        taskPeriod:  'Month',
-        bizHours:    8,
-        bizDays:     220,
-        payloadKB:   50,
-        ha:          false
+        name:       compName,
+        intType:    uc.intType,
+        impl:       'MuleSoft',
+        tasks:      tasks,
+        taskPeriod: 'Month',
+        bizHours:   8,
+        bizDays:    220,
+        payloadKB:  payloadKB,
+        ha:         false
       }]
     };
   });
