@@ -3,15 +3,300 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Usage-Based Pricing | MuleSoft Calculators</title>
+  <title>Usage-Based Pricing — Simplified Sizing | MuleSoft Calculators</title>
   <link rel="stylesheet" href="../assets/style.css" />
+  <style>
+    /* ── Use Case Card ── */
+    .uc-list { display: flex; flex-direction: column; gap: 16px; }
+
+    .uc-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    .uc-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      background: #f0f8ff;
+      border-bottom: 1px solid #d9ecf7;
+    }
+
+    .uc-card-header .uc-number {
+      background: #00a0df;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .uc-card-header input[type="text"] {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #333;
+      padding: 0;
+    }
+    .uc-card-header input[type="text"]:focus { outline: none; }
+    .uc-card-header input[type="text"]::placeholder { color: #aaa; font-weight: 400; }
+
+    .btn-remove {
+      background: none;
+      border: none;
+      color: #bbb;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+    .btn-remove:hover { color: #e55; }
+
+    .uc-card-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    .uc-inputs {
+      padding: 16px 20px;
+      border-right: 1px solid #eef2f6;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .uc-inputs .form-group { margin-bottom: 0; }
+
+    .uc-outputs {
+      padding: 16px 20px;
+      background: #fafcff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .uc-outputs h4 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #999;
+      margin-bottom: 4px;
+    }
+
+    .out-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      background: white;
+      border-radius: 5px;
+      border: 1px solid #e8edf2;
+      font-size: 0.85rem;
+    }
+
+    .out-row span:first-child { color: #666; }
+    .out-row span:last-child  { font-weight: 600; color: #0070ad; }
+
+    .out-placeholder {
+      font-size: 0.8rem;
+      color: #bbb;
+      text-align: center;
+      padding: 16px 0;
+    }
+
+    /* ── Bidir toggle ── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .toggle-row label { margin-bottom: 0; }
+
+    .toggle {
+      position: relative;
+      width: 40px; height: 22px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #ccc;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      left: 3px; top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle input:checked + .toggle-slider { background: #00a0df; }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+    /* ── Add button ── */
+    .btn-add {
+      background: white;
+      color: #00a0df;
+      border: 2px dashed #00a0df;
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 4px;
+    }
+    .btn-add:hover { background: #f0f8ff; }
+
+    /* ── Global settings bar ── */
+    .settings-bar {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 16px 24px;
+      display: flex;
+      gap: 32px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .settings-bar .form-group { margin-bottom: 0; min-width: 180px; }
+
+    /* ── Totals summary ── */
+    .summary-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      overflow: hidden;
+      margin-top: 24px;
+    }
+
+    .summary-header {
+      background: #0070ad;
+      color: white;
+      padding: 14px 24px;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .summary-body {
+      padding: 20px 24px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .summary-metric {
+      background: #f4f8fc;
+      border-radius: 6px;
+      padding: 14px 16px;
+      border-left: 4px solid #00a0df;
+    }
+
+    .summary-metric .label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #888;
+      margin-bottom: 6px;
+    }
+
+    .summary-metric .value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #0070ad;
+    }
+
+    .summary-metric .sub {
+      font-size: 0.75rem;
+      color: #aaa;
+      margin-top: 2px;
+    }
+
+    /* ── Package recommendation ── */
+    .pkg-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      padding: 16px;
+      border-radius: 8px;
+      border: 2px solid #00a0df;
+      background: #f0f8ff;
+    }
+
+    .pkg-badge {
+      background: #00a0df;
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+      align-self: flex-start;
+      margin-top: 2px;
+    }
+
+    .pkg-badge.advanced { background: #0070ad; }
+
+    .pkg-details { flex: 1; }
+    .pkg-details .pkg-name  { font-weight: 700; font-size: 1rem; color: #0070ad; }
+    .pkg-details .pkg-price { font-size: 1.4rem; font-weight: 700; color: #333; margin: 4px 0; }
+    .pkg-details .pkg-reason { font-size: 0.82rem; color: #666; }
+    .pkg-extras { font-size: 0.8rem; color: #888; margin-top: 8px; line-height: 1.6; }
+
+    .summary-empty {
+      text-align: center;
+      color: #bbb;
+      padding: 32px;
+      font-size: 0.9rem;
+    }
+
+    /* ── Version badge ── */
+    .version-badge {
+      display: inline-block;
+      background: #e8f4fb;
+      color: #0070ad;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 12px;
+      margin-left: 12px;
+      vertical-align: middle;
+    }
+
+    @media (max-width: 640px) {
+      .uc-card-body    { grid-template-columns: 1fr; }
+      .uc-inputs       { border-right: none; border-bottom: 1px solid #eef2f6; }
+      .summary-grid    { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
 
   <header>
     <div>
       <h1>MuleSoft Sizing Calculators</h1>
-      <p>Solution Engineering Tools</p>
+      <p>Solution Engineering Tools &mdash; Internal Use Only</p>
     </div>
   </header>
 
@@ -23,13 +308,263 @@
   </nav>
 
   <main>
-    <div class="card">
-      <h2>📊 Usage-Based Pricing Calculator</h2>
-      <p style="color:#888; font-size:0.85rem;">Coming soon — this calculator is under construction.</p>
+
+    <div style="display:flex; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:8px;">
+      <h2 style="font-size:1.1rem; color:#333; margin:0;">
+        Usage-Based Pricing &mdash; Simplified Sizing
+      </h2>
+      <span class="version-badge" id="versionBadge"></span>
     </div>
+
+    <!-- Global settings -->
+    <div class="settings-bar">
+      <div class="form-group">
+        <label for="numEnvs">Number of Environments</label>
+        <select id="numEnvs">
+          <option value="2">2</option>
+          <option value="3" selected>3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="reusability">Reusability Index</label>
+        <select id="reusability">
+          <option value="0%">0%</option>
+          <option value="1-15%" selected>1-15%</option>
+          <option value="16-30%">16-30%</option>
+          <option value="31-45%">31-45%</option>
+          <option value="46-60%">46-60%</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Use case cards -->
+    <div class="uc-list" id="ucList"></div>
+
+    <!-- Add button -->
+    <button class="btn-add" id="btnAdd">+ Add Use Case</button>
+
+    <!-- Summary -->
+    <div class="summary-card">
+      <div class="summary-header">Sizing Summary &amp; Package Recommendation</div>
+      <div class="summary-body" id="summaryBody">
+        <div class="summary-empty">Fill in at least one use case to see sizing results.</div>
+      </div>
+    </div>
+
   </main>
 
   <footer>MuleSoft SE Tools &mdash; Internal Use Only</footer>
+
+  <script src="../assets/ubp-data.js"></script>
+  <script src="../assets/ubp-calc.js"></script>
+  <script>
+    document.getElementById('versionBadge').textContent = 'Based on UBP v' + UBP_VERSION;
+
+    let ucCounter = 0;
+
+    function getGlobals() {
+      return {
+        numEnvs:        parseInt(document.getElementById('numEnvs').value, 10),
+        reusabilityKey: document.getElementById('reusability').value
+      };
+    }
+
+    function createCard() {
+      ucCounter++;
+      const id = ucCounter;
+
+      const card = document.createElement('div');
+      card.className = 'uc-card';
+      card.dataset.id = id;
+
+      card.innerHTML = `
+        <div class="uc-card-header">
+          <div class="uc-number">${id}</div>
+          <input type="text" placeholder="Use Case Name (optional)" class="uc-name" />
+          <button class="btn-remove" title="Remove">&#x2715;</button>
+        </div>
+        <div class="uc-card-body">
+          <div class="uc-inputs">
+            <div class="form-group">
+              <label>Integration Type</label>
+              <select class="f-intType">
+                <option value="">— select —</option>
+                <option>API/Microservices</option>
+                <option>Event-Based</option>
+                <option>Schedule-Based</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Systems to Integrate</label>
+              <select class="f-systems">
+                <option value="">— select —</option>
+                <option>1-2</option>
+                <option>3-5</option>
+                <option>6-10</option>
+                <option>10+</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Business Objects</label>
+              <select class="f-bizObjects">
+                <option value="">— select —</option>
+                <option>1-2</option>
+                <option>3-5</option>
+                <option>6-10</option>
+                <option>10+</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tasks / Month</label>
+              <select class="f-tasks">
+                <option value="">— select —</option>
+                <option>0-10K</option>
+                <option>10K-100K</option>
+                <option>100K-500K</option>
+                <option>500K-10M</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Avg Payload Size</label>
+              <select class="f-payload">
+                <option value="">— select —</option>
+                <option>0-100KB</option>
+                <option>101KB-500KB</option>
+                <option>501KB-1MB</option>
+                <option>1MB-10MB</option>
+                <option>10MB+</option>
+              </select>
+            </div>
+            <div class="form-group toggle-row">
+              <label>Bidirectional?</label>
+              <label class="toggle">
+                <input type="checkbox" class="f-bidir" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="uc-outputs">
+            <h4>Live Estimate</h4>
+            <div class="out-placeholder">Complete inputs to see estimate</div>
+          </div>
+        </div>
+      `;
+
+      card.querySelector('.btn-remove').addEventListener('click', () => {
+        card.remove();
+        recalcAll();
+      });
+
+      card.querySelectorAll('select, input').forEach(el => {
+        el.addEventListener('change', recalcAll);
+      });
+
+      return card;
+    }
+
+    function addCard() {
+      document.getElementById('ucList').appendChild(createCard());
+      recalcAll();
+    }
+
+    function readCard(card) {
+      return {
+        intType:    card.querySelector('.f-intType').value,
+        systems:    card.querySelector('.f-systems').value,
+        bidir:      card.querySelector('.f-bidir').checked,
+        bizObjects: card.querySelector('.f-bizObjects').value,
+        tasks:      card.querySelector('.f-tasks').value,
+        payload:    card.querySelector('.f-payload').value
+      };
+    }
+
+    function renderRowOutput(card, result) {
+      const el = card.querySelector('.uc-outputs');
+      if (!result) {
+        el.innerHTML = '<h4>Live Estimate</h4><div class="out-placeholder">Complete inputs to see estimate</div>';
+        return;
+      }
+      el.innerHTML = `
+        <h4>Live Estimate</h4>
+        <div class="out-row"><span>Flows</span><span>${result.flows}</span></div>
+        <div class="out-row"><span>Messages / month</span><span>${fmtMRange(result.msgMin, result.msgMax)}</span></div>
+        <div class="out-row"><span>Data / month</span><span>${fmtGBRange(result.dataMinGB, result.dataMaxGB)}</span></div>
+      `;
+    }
+
+    function renderSummary(totals, rec) {
+      const el = document.getElementById('summaryBody');
+      if (!totals) {
+        el.innerHTML = '<div class="summary-empty">Fill in at least one use case to see sizing results.</div>';
+        return;
+      }
+
+      const annMsgMinM = totals.annualMsgMin / 1e6;
+      const annMsgMaxM = totals.annualMsgMax / 1e6;
+
+      el.innerHTML = `
+        <div class="summary-grid">
+          <div class="summary-metric">
+            <div class="label">Total Flows</div>
+            <div class="value">${totals.totalFlows}</div>
+            <div class="sub">across all use cases</div>
+          </div>
+          <div class="summary-metric">
+            <div class="label">Messages / Year</div>
+            <div class="value">${fmtM(annMsgMinM)} &ndash; ${fmtM(annMsgMaxM)}</div>
+            <div class="sub">annualised estimate</div>
+          </div>
+          <div class="summary-metric">
+            <div class="label">Data Throughput / Year</div>
+            <div class="value">${fmtGB(totals.annualDataMin)}</div>
+            <div class="sub">min estimate</div>
+          </div>
+        </div>
+
+        <div class="pkg-row">
+          <div class="pkg-badge ${rec.name === 'Advanced' ? 'advanced' : ''}">${rec.name}</div>
+          <div class="pkg-details">
+            <div class="pkg-name">Integration ${rec.name} Package</div>
+            <div class="pkg-price">${fmtUSD(rec.totalListPrice)} <span style="font-size:0.85rem;font-weight:400;color:#888;">/ year (list price, USD)</span></div>
+            <div class="pkg-reason">${rec.reasons.join(' &bull; ')}</div>
+            ${rec.extraFlows > 0 || rec.extraMsgM > 0 || rec.extraDataGB > 0 ? `
+            <div class="pkg-extras">
+              Additional capacity beyond package:
+              ${rec.extraFlows  > 0 ? `${rec.extraFlows} extra flows &nbsp;&bull;&nbsp;` : ''}
+              ${rec.extraMsgM   > 0 ? `${rec.extraMsgM.toFixed(1)}M extra messages &nbsp;&bull;&nbsp;` : ''}
+              ${rec.extraDataGB > 0 ? `${fmtGB(rec.extraDataGB)} extra data` : ''}
+            </div>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function recalcAll() {
+      const { numEnvs, reusabilityKey } = getGlobals();
+      const cards = document.querySelectorAll('.uc-card');
+      const rowResults = [];
+
+      cards.forEach(card => {
+        const result = calcRow(readCard(card), numEnvs, reusabilityKey);
+        renderRowOutput(card, result);
+        rowResults.push(result);
+      });
+
+      const valid = rowResults.filter(Boolean);
+      if (valid.length === 0) { renderSummary(null, null); return; }
+
+      const totals = calcTotals(valid);
+      renderSummary(totals, recommendPackage(totals));
+    }
+
+    document.getElementById('btnAdd').addEventListener('click', addCard);
+    document.getElementById('numEnvs').addEventListener('change', recalcAll);
+    document.getElementById('reusability').addEventListener('change', recalcAll);
+
+    addCard(); addCard(); addCard();
+  </script>
 
 </body>
 </html>
