@@ -68,6 +68,30 @@
     }
     .btn-export-pdf:hover { background: #e8f4fb; }
 
+    /* ── Screen / print visibility helpers ── */
+    .print-only  { display: none; }
+    .screen-only { display: block; }
+
+    /* ── Print-only static settings layout ── */
+    .print-only-settings {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+    .print-setting-item { }
+    .print-setting-item .ps-label {
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #888;
+      margin-bottom: 3px;
+    }
+    .print-setting-item .ps-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #333;
+    }
+
     /* ── Print / PDF styles ── */
     @media print {
       /* hide everything not needed */
@@ -79,6 +103,10 @@
       .btn-methodology, .btn-export-pdf,
       .btn-add-uc, .col-actions,
       .modal-overlay { display: none !important; }
+
+      .screen-only { display: none !important; }
+      .print-only  { display: block !important; }
+      .print-only-settings { display: flex !important; }
 
       body { background: white; font-size: 11pt; }
       main { max-width: 100%; margin: 0; padding: 0; }
@@ -521,11 +549,12 @@
 
     <!-- Global settings -->
     <div class="settings-bar">
-      <div class="form-group">
+      <!-- Screen: form fields -->
+      <div class="form-group screen-only">
         <label for="customerName">Customer Name</label>
         <input type="text" id="customerName" placeholder="e.g. Acme Corp" style="min-width:200px;" />
       </div>
-      <div class="form-group">
+      <div class="form-group screen-only">
         <label for="numEnvs">Number of Environments</label>
         <select id="numEnvs">
           <option value="2">2</option>
@@ -534,7 +563,7 @@
           <option value="5">5</option>
         </select>
       </div>
-      <div class="form-group">
+      <div class="form-group screen-only">
         <label for="reusability">Reusability Index</label>
         <select id="reusability">
           <option value="0%">0%</option>
@@ -544,6 +573,9 @@
           <option value="46-60%">46-60%</option>
         </select>
       </div>
+
+      <!-- Print-only: static summary of settings -->
+      <div class="print-only-settings print-only" id="printSettings"></div>
     </div>
 
     <!-- Use cases table -->
@@ -1028,9 +1060,27 @@
       const { numEnvs, reusabilityKey } = getGlobals();
       const customer = document.getElementById('customerName').value.trim();
       const date = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+      // Populate print-only static settings block
+      const fields = [];
+      if (customer) fields.push({ label: 'Customer', value: customer });
+      fields.push(
+        { label: 'Environments',     value: numEnvs },
+        { label: 'Reusability Index', value: reusabilityKey },
+        { label: 'Generated',         value: date },
+        { label: 'Based on',          value: 'UBP v' + UBP_VERSION }
+      );
+      document.getElementById('printSettings').innerHTML = fields.map(f => `
+        <div class="print-setting-item">
+          <div class="ps-label">${f.label}</div>
+          <div class="ps-value">${f.value}</div>
+        </div>`).join('');
+
+      // Keep print meta line as fallback
       const customerPart = customer ? `Customer: ${customer}  |  ` : '';
       document.getElementById('printMeta').textContent =
         `${customerPart}Generated: ${date}  |  Environments: ${numEnvs}  |  Reusability: ${reusabilityKey}  |  ${UBP_SOURCE}`;
+
       window.print();
     });
 
