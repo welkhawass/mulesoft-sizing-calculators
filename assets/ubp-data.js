@@ -7,6 +7,8 @@
 // update values below, and bump UBP_VERSION.
 // ============================================================
 
+const UBP_ACCESS_CODE = "mulesoftse";
+
 const UBP_VERSION = "6.10";
 const UBP_SOURCE  = "[UBP] Simplified & Detailed Sizing_Pricing Calculators_v6.10.xlsx";
 
