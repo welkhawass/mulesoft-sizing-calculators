@@ -68,76 +68,66 @@
     }
     .btn-export-pdf:hover { background: #e8f4fb; }
 
-    /* ── Lock banner ── */
-    .lock-banner {
-      background: #1a1a2e;
-      color: white;
-      border-radius: 8px;
-      padding: 28px 32px;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .lock-banner h3 { font-size: 1rem; margin: 0 0 6px; letter-spacing: 0.02em; }
-    .lock-banner p  { font-size: 0.82rem; color: #aaa; margin: 0 0 18px; }
-
-    .lock-input-row {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .lock-input-row input {
-      width: 220px;
-      padding: 10px 14px;
-      border-radius: 6px;
-      border: 2px solid #444;
-      background: #2a2a3e;
-      color: white;
-      font-size: 0.95rem;
-      letter-spacing: 0.08em;
-      text-align: center;
-    }
-    .lock-input-row input:focus { outline: none; border-color: #00a0df; }
-    .lock-input-row input::placeholder { color: #666; letter-spacing: 0; }
-
-    .btn-unlock {
-      background: #00a0df;
-      color: white;
-      border: none;
-      padding: 10px 24px;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .btn-unlock:hover { background: #0070ad; }
-
-    .lock-error {
-      font-size: 0.8rem;
-      color: #ff6b6b;
-      margin-top: 10px;
-      display: none;
-    }
-    .lock-error.visible { display: block; }
-
-    /* ── Locked overlay on table ── */
-    .locked-overlay {
+    /* ── Full-page lock overlay ── */
+    .lock-overlay {
+      position: fixed;
+      inset: 0;
+      background: #0d1b2a;
+      z-index: 9999;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 48px;
-      color: #ccc;
-      font-size: 0.9rem;
-      gap: 8px;
     }
 
-    /* ── Disabled state for toolbar buttons ── */
-    .btn-disabled {
-      opacity: 0.35;
-      cursor: not-allowed !important;
-      pointer-events: none;
+    .lock-box {
+      background: #1a2a3a;
+      border: 1px solid #2a4a6a;
+      border-radius: 12px;
+      padding: 40px 48px;
+      text-align: center;
+      width: 360px;
+      max-width: 90vw;
+    }
+
+    .lock-box .lock-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .lock-box h3 { color: white; font-size: 1.1rem; margin: 0 0 6px; }
+    .lock-box p  { color: #7a9ab8; font-size: 0.82rem; margin: 0 0 24px; line-height: 1.5; }
+
+    .lock-box input[type="password"] {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 6px;
+      border: 2px solid #2a4a6a;
+      background: #0d1b2a;
+      color: white;
+      font-size: 1rem;
+      text-align: center;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
+    .lock-box input[type="password"]:focus { outline: none; border-color: #00a0df; }
+    .lock-box input[type="password"]::placeholder { color: #3a5a7a; letter-spacing: 0; }
+
+    .lock-box .btn-unlock {
+      width: 100%;
+      background: #00a0df;
+      color: white;
+      border: none;
+      padding: 11px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .lock-box .btn-unlock:hover { background: #0070ad; }
+
+    .lock-error {
+      color: #ff6b6b;
+      font-size: 0.8rem;
+      margin-top: 10px;
+      min-height: 1.2em;
     }
 
     /* ── Screen / print visibility helpers ── */
@@ -174,7 +164,7 @@
       header, nav, footer,
       .btn-methodology, .btn-export-pdf,
       .btn-add-uc, .col-actions,
-      .modal-overlay { display: none !important; }
+      .modal-overlay, .lock-overlay { display: none !important; }
 
       .screen-only { display: none !important; }
       .print-only  { display: block !important; }
@@ -601,17 +591,6 @@
 
   <main>
 
-    <!-- Lock banner -->
-    <div class="lock-banner" id="lockBanner">
-      <h3>&#128274; MuleSoft SE Tools — Access Required</h3>
-      <p>Enter the access code to use this calculator.</p>
-      <div class="lock-input-row">
-        <input type="password" id="accessCodeInput" placeholder="Enter access code" />
-        <button class="btn-unlock" id="btnUnlock">Unlock</button>
-      </div>
-      <div class="lock-error" id="lockError">Incorrect code. Please try again.</div>
-    </div>
-
     <!-- Print-only header (hidden on screen) -->
     <div class="print-header" style="display:none; margin-bottom:20px;">
       <h1 style="font-size:15pt; color:#0070ad; margin:0 0 4px;">MuleSoft — Usage-Based Pricing Simplified Sizing</h1>
@@ -852,56 +831,21 @@
   </div>
 
 
+  <!-- Full-page lock overlay -->
+  <div class="lock-overlay" id="lockOverlay">
+    <div class="lock-box">
+      <div class="lock-icon">&#128274;</div>
+      <h3>MuleSoft SE Tools</h3>
+      <p>This calculator is for internal SE use.<br/>Enter the access code to continue.</p>
+      <input type="password" id="accessCodeInput" placeholder="Access code" />
+      <button class="btn-unlock" id="btnUnlock">Unlock</button>
+      <div class="lock-error" id="lockError"></div>
+    </div>
+  </div>
+
   <script src="../assets/ubp-data.js"></script>
   <script src="../assets/ubp-calc.js"></script>
   <script>
-    // ── Access lock ──
-    const SESSION_KEY = 'ubp_unlocked';
-
-    function isUnlocked() {
-      return sessionStorage.getItem(SESSION_KEY) === '1';
-    }
-
-    function applyLockState() {
-      const unlocked = isUnlocked();
-      document.getElementById('lockBanner').style.display = unlocked ? 'none' : 'block';
-
-      const disableTargets = [
-        document.getElementById('btnAddUC'),
-        document.getElementById('btnExportPDF'),
-        document.getElementById('btnMethodology')
-      ];
-      disableTargets.forEach(el => {
-        if (unlocked) el.classList.remove('btn-disabled');
-        else          el.classList.add('btn-disabled');
-      });
-
-      if (!unlocked) {
-        document.getElementById('tableArea').innerHTML =
-          '<div class="locked-overlay">&#128274; Enter the access code above to view and edit use cases.</div>';
-        document.getElementById('summaryBody').innerHTML =
-          '<div class="summary-empty">&#128274; Unlock the calculator to see sizing results.</div>';
-      }
-    }
-
-    function tryUnlock() {
-      const val = document.getElementById('accessCodeInput').value.trim();
-      if (val === UBP_ACCESS_CODE) {
-        sessionStorage.setItem(SESSION_KEY, '1');
-        document.getElementById('lockError').classList.remove('visible');
-        applyLockState();
-        refreshAll();
-      } else {
-        document.getElementById('lockError').classList.add('visible');
-        document.getElementById('accessCodeInput').select();
-      }
-    }
-
-    document.getElementById('btnUnlock').addEventListener('click', tryUnlock);
-    document.getElementById('accessCodeInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') tryUnlock();
-    });
-
     // ── Version badge ──
     document.getElementById('versionBadge').textContent = 'Based on UBP v' + UBP_VERSION;
 
@@ -1214,9 +1158,39 @@
       window.print();
     });
 
-    // ── Init ──
-    applyLockState();
-    if (isUnlocked()) refreshAll();
+    // ── Init & lock ──
+    (function() {
+      const SESSION_KEY = 'ubp_unlocked';
+      const overlay     = document.getElementById('lockOverlay');
+      const input       = document.getElementById('accessCodeInput');
+      const errorEl     = document.getElementById('lockError');
+
+      function unlock() {
+        overlay.style.display = 'none';
+        refreshAll();
+      }
+
+      function tryUnlock() {
+        if (input.value.trim() === UBP_ACCESS_CODE) {
+          sessionStorage.setItem(SESSION_KEY, '1');
+          unlock();
+        } else {
+          errorEl.textContent = 'Incorrect code. Please try again.';
+          input.value = '';
+          input.focus();
+        }
+      }
+
+      document.getElementById('btnUnlock').addEventListener('click', tryUnlock);
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+
+      // Already unlocked this session?
+      if (sessionStorage.getItem(SESSION_KEY) === '1') {
+        unlock();
+      } else {
+        input.focus();
+      }
+    })();
   </script>
 
 </body>
