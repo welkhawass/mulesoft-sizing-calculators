@@ -522,6 +522,10 @@
     <!-- Global settings -->
     <div class="settings-bar">
       <div class="form-group">
+        <label for="customerName">Customer Name</label>
+        <input type="text" id="customerName" placeholder="e.g. Acme Corp" style="min-width:200px;" />
+      </div>
+      <div class="form-group">
         <label for="numEnvs">Number of Environments</label>
         <select id="numEnvs">
           <option value="2">2</option>
@@ -1022,9 +1026,11 @@
     // ── Export PDF ──
     document.getElementById('btnExportPDF').addEventListener('click', () => {
       const { numEnvs, reusabilityKey } = getGlobals();
+      const customer = document.getElementById('customerName').value.trim();
       const date = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+      const customerPart = customer ? `Customer: ${customer}  |  ` : '';
       document.getElementById('printMeta').textContent =
-        `Generated: ${date}  |  Environments: ${numEnvs}  |  Reusability: ${reusabilityKey}  |  ${UBP_SOURCE}`;
+        `${customerPart}Generated: ${date}  |  Environments: ${numEnvs}  |  Reusability: ${reusabilityKey}  |  ${UBP_SOURCE}`;
       window.print();
     });
 
