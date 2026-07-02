@@ -142,6 +142,34 @@
         </div>
       </div>
 
+      <!-- Premium Connectors -->
+      <div class="table-card" style="margin-bottom:20px;">
+        <div class="table-card-header">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <h3>Premium Connectors</h3>
+            <button class="btn-conn-info" id="detBtnConnInfo" title="Licensing notes">&#9432;</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <select id="det-conn-select" style="padding:7px 10px;border:1px solid #d0d7de;border-radius:6px;font-size:0.85rem;color:#333;min-width:260px;">
+              <option value="">— select a premium connector to add —</option>
+              <option>SAP Connector</option>
+              <option>HL7 Connector</option>
+              <option>Oracle EBS Connector</option>
+              <option>Oracle PeopleSoft Connector</option>
+              <option>IBM CTG (CICS Transaction Gateway) Connector</option>
+              <option>Siebel (On-Premise) Connector</option>
+              <option>X12 Connector (EDI Standard)</option>
+              <option>EDIFACT Connector (EDI Standard)</option>
+              <option>RosettaNet Connector</option>
+            </select>
+            <button class="btn-add-uc" id="detBtnAddConn">+ Add</button>
+          </div>
+        </div>
+        <div style="padding:12px 24px;" id="detConnectorArea">
+          <div style="color:#bbb;font-size:0.85rem;padding:8px 0;">No premium connectors added.</div>
+        </div>
+      </div>
+
       <!-- Use cases + components table -->
       <div class="table-card">
         <div class="table-card-header">
@@ -416,6 +444,47 @@ APIs to Govern            = APIs to Manage (Prod only)
       </div>
       <div class="modal-footer">
         <button class="btn-save" id="btnMethodDone">Close</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════
+       PREMIUM CONNECTOR INFO MODAL
+  ══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="connInfoModal">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <h3>Premium Connector Licensing</h3>
+        <button class="btn-modal-close" id="connInfoClose">&#x2715;</button>
+      </div>
+      <div class="modal-body" style="display:block;padding:24px;overflow-y:auto;">
+        <div class="method-section">
+          <h4>Pricing</h4>
+          <p>Each premium connector is licensed at <strong>$33,600 / environment / year</strong> (list price). Production and non-production environments are billed at the same rate.</p>
+        </div>
+        <div class="method-section">
+          <h4>Environment Scope</h4>
+          <p>A connector must be licensed for <strong>each deployment environment</strong> where it is used — Production, Pre-Production, Staging, Dev, DR, etc. Count every environment separately.</p>
+        </div>
+        <div class="method-section">
+          <h4>Connector Notes</h4>
+          <table class="method-table">
+            <tr><th>Connector</th><th>Notes</th></tr>
+            <tr><td>SAP Connector</td><td>Covers SAP ECC, S/4HANA, SAP S/4HANA OData Connector, and SAP S/4HANA SOAP Connector — all under one license.</td></tr>
+            <tr><td>HL7 Connector</td><td>—</td></tr>
+            <tr><td>Oracle EBS Connector</td><td>—</td></tr>
+            <tr><td>Oracle PeopleSoft Connector</td><td>—</td></tr>
+            <tr><td>IBM CTG Connector</td><td>CICS Transaction Gateway.</td></tr>
+            <tr><td>Siebel (On-Premise) Connector</td><td>—</td></tr>
+            <tr><td>X12 Connector</td><td>EDI Standard. Typically sold as part of B2B Message Packs in legacy UBP pricing.</td></tr>
+            <tr><td>EDIFACT Connector</td><td>EDI Standard. Typically sold as part of B2B Message Packs in legacy UBP pricing.</td></tr>
+            <tr><td>RosettaNet Connector</td><td>B2B/EDI. Typically sold as part of B2B Message Packs in legacy UBP pricing.</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-save" id="connInfoDone">Close</button>
       </div>
     </div>
   </div>

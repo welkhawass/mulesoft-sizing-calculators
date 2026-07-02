@@ -98,6 +98,27 @@ var PACKAGES = {
   }
 };
 
+// Premium Connectors — list and pricing
+// Source: Integration Composite SKUs / Pricing sheet
+var PREMIUM_CONNECTORS = [
+  { name: 'SAP Connector',
+    note: 'Covers SAP ECC, S/4HANA, SAP S/4HANA OData Connector, and SAP S/4HANA SOAP Connector — all under one license.' },
+  { name: 'HL7 Connector',                              note: '' },
+  { name: 'Oracle EBS Connector',                       note: '' },
+  { name: 'Oracle PeopleSoft Connector',                note: '' },
+  { name: 'IBM CTG (CICS Transaction Gateway) Connector', note: '' },
+  { name: 'Siebel (On-Premise) Connector',              note: '' },
+  { name: 'X12 Connector (EDI Standard)',
+    note: 'B2B/EDI connector — typically sold as part of B2B Message Packs.' },
+  { name: 'EDIFACT Connector (EDI Standard)',
+    note: 'B2B/EDI connector — typically sold as part of B2B Message Packs.' },
+  { name: 'RosettaNet Connector',
+    note: 'B2B/EDI connector — typically sold as part of B2B Message Packs.' }
+];
+
+// Per connector per environment (Production and Non-Production billed at the same rate)
+var PREMIUM_CONNECTOR_PRICE = 33600;
+
 // Power law for additional flows: price_per_unit = A × qty^B  →  total = A × qty^(1+B)
 // Source: Data - Do not touch, B97:B98  (Mule Flows: A=420, B=-0.1076851047)
 var FLOW_POWER_LAW = { A: 420, B: -0.1076851047 };

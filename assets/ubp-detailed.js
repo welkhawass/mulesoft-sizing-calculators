@@ -4,8 +4,9 @@
 // ============================================================
 
 // ── State ──
-var detUseCases  = [];   // [{ name, components:[] }]
-var detEditing   = { ucIdx: -1, compIdx: -1 };
+var detUseCases      = [];   // [{ name, components:[] }]
+var detEditing       = { ucIdx: -1, compIdx: -1 };
+var detConnectors    = [];   // [{ name, prodEnvs, nonProdEnvs }]
 
 // ── Environment settings (with defaults) ──
 function detGetEnvSettings() {
@@ -306,11 +307,130 @@ function detRenderSummary() {
       '</tbody>' +
     '</table></div>' +
     apiMgmtSection +
-    pkgBreakdownHtml(rec, t.flows.total, t.msgs.total / 1e6, t.data.total);
+    pkgBreakdownHtml(rec, t.flows.total, t.msgs.total / 1e6, t.data.total) +
+    detConnectorSummaryHtml();
+}
+
+// ── Premium Connectors — render section ──
+function detRenderConnectors() {
+  var el = document.getElementById('detConnectorArea');
+  if (!el) return;
+
+  if (detConnectors.length === 0) {
+    el.innerHTML = '<div style="color:#bbb;font-size:0.85rem;padding:8px 0;">No premium connectors added.</div>';
+    return;
+  }
+
+  var rows = detConnectors.map(function(c, i) {
+    var cost = (c.prodEnvs + c.nonProdEnvs) * PREMIUM_CONNECTOR_PRICE;
+    // find connector note
+    var match = PREMIUM_CONNECTORS.filter(function(p) { return p.name === c.name; })[0];
+    var noteBtn = (match && match.note)
+      ? ' <button class="btn-conn-note" onclick="detShowConnNote(' + i + ')" title="' +
+          match.note.replace(/"/g, '&quot;') + '">&#9432;</button>'
+      : '';
+    return '<tr>' +
+      '<td>' + c.name + noteBtn + '</td>' +
+      '<td><input type="number" class="conn-env-input" value="' + c.prodEnvs + '" min="0" max="20" ' +
+        'onchange="detConnectors[' + i + '].prodEnvs=parseInt(this.value)||0;detRefresh();" /></td>' +
+      '<td><input type="number" class="conn-env-input" value="' + c.nonProdEnvs + '" min="0" max="20" ' +
+        'onchange="detConnectors[' + i + '].nonProdEnvs=parseInt(this.value)||0;detRefresh();" /></td>' +
+      '<td style="text-align:right;font-weight:600;color:#0070ad;">' + fmtUSD(cost) + '</td>' +
+      '<td style="text-align:right;">' +
+        '<button class="btn-action btn-del" onclick="detDeleteConnector(' + i + ')">Remove</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+
+  var total = detConnectors.reduce(function(s, c) {
+    return s + (c.prodEnvs + c.nonProdEnvs) * PREMIUM_CONNECTOR_PRICE;
+  }, 0);
+
+  el.innerHTML =
+    '<table class="uc-table" style="font-size:0.83rem;">' +
+      '<thead><tr>' +
+        '<th>Connector</th>' +
+        '<th style="min-width:90px;">Prod Envs</th>' +
+        '<th style="min-width:90px;">Non-Prod Envs</th>' +
+        '<th style="text-align:right;min-width:100px;">Cost / yr</th>' +
+        '<th></th>' +
+      '</tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+      '<tfoot><tr>' +
+        '<td colspan="3" style="font-weight:700;text-align:right;padding:10px 14px;">Total add-on cost</td>' +
+        '<td style="text-align:right;font-weight:700;color:#0070ad;padding:10px 14px;">' + fmtUSD(total) + '</td>' +
+        '<td></td>' +
+      '</tr></tfoot>' +
+    '</table>';
+}
+
+function detConnectorSummaryHtml() {
+  if (detConnectors.length === 0) return '';
+  var rows = detConnectors.map(function(c) {
+    var cost = (c.prodEnvs + c.nonProdEnvs) * PREMIUM_CONNECTOR_PRICE;
+    return '<tr><td>' + c.name + '</td>' +
+      '<td class="col-metric">' + c.prodEnvs + ' Prod + ' + c.nonProdEnvs + ' Non-Prod</td>' +
+      '<td class="col-metric">' + fmtUSD(cost) + '</td></tr>';
+  }).join('');
+  var total = detConnectors.reduce(function(s, c) {
+    return s + (c.prodEnvs + c.nonProdEnvs) * PREMIUM_CONNECTOR_PRICE;
+  }, 0);
+  return '<div style="font-weight:700;font-size:0.82rem;color:#0070ad;text-transform:uppercase;' +
+    'letter-spacing:0.04em;margin:16px 0 8px;">Add-on Products</div>' +
+    '<div style="overflow-x:auto;margin-bottom:16px;">' +
+    '<table class="uc-table" style="font-size:0.83rem;">' +
+      '<thead><tr><th>Premium Connector</th><th class="col-metric">Environments</th>' +
+        '<th class="col-metric">List Price / yr</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+      '<tfoot><tr>' +
+        '<td colspan="2" style="font-weight:700;text-align:right;padding:10px 14px;">Add-on subtotal</td>' +
+        '<td class="col-metric" style="font-weight:700;">' + fmtUSD(total) + '</td>' +
+      '</tr></tfoot>' +
+    '</table></div>' +
+    '<div style="background:#f4f8fc;border-radius:6px;padding:12px 16px;display:flex;' +
+      'justify-content:space-between;align-items:center;margin-bottom:4px;">' +
+      '<span style="font-weight:700;font-size:0.95rem;color:#333;">Grand Total (list price)</span>' +
+      '<span style="font-weight:700;font-size:1.1rem;color:#0070ad;">' +
+        // Grand total computed inline — package price + connector add-ons
+        // We re-compute to avoid threading rec out of scope
+        (function() {
+          var t2   = detCalcTotals();
+          var rec2 = recommendPackage({
+            totalFlows: t2.flows.total, annualMsgMin: t2.msgs.total,
+            annualMsgMax: t2.msgs.total, annualDataMin: t2.data.total,
+            annualDataMax: t2.data.total, needsHA: t2.needsHA
+          });
+          return fmtUSD(rec2.totalListPrice + total);
+        })() +
+      ' / year</span>' +
+    '</div>';
+}
+
+function detShowConnNote(idx) {
+  var match = PREMIUM_CONNECTORS.filter(function(p) { return p.name === detConnectors[idx].name; })[0];
+  if (match && match.note) alert(match.note);
+}
+
+function detAddConnector() {
+  var sel = document.getElementById('det-conn-select');
+  var name = sel.value;
+  if (!name) return;
+  // prevent duplicates
+  var exists = detConnectors.some(function(c) { return c.name === name; });
+  if (exists) { alert('This connector is already added.'); return; }
+  detConnectors.push({ name: name, prodEnvs: 1, nonProdEnvs: 1 });
+  sel.value = '';
+  detRefresh();
+}
+
+function detDeleteConnector(idx) {
+  detConnectors.splice(idx, 1);
+  detRefresh();
 }
 
 function detRefresh() {
   detRenderTable();
+  detRenderConnectors();
   detRenderSummary();
 }
 
@@ -524,5 +644,23 @@ function detInitEvents() {
       if (!confirmed) return;
     }
     detCopyFromSimplified();
+  });
+
+  // Premium connector add button
+  document.getElementById('detBtnAddConn').addEventListener('click', detAddConnector);
+
+  // Premium connector info modal
+  document.getElementById('detBtnConnInfo').addEventListener('click', function() {
+    document.getElementById('connInfoModal').classList.add('open');
+  });
+  document.getElementById('connInfoClose').addEventListener('click', function() {
+    document.getElementById('connInfoModal').classList.remove('open');
+  });
+  document.getElementById('connInfoDone').addEventListener('click', function() {
+    document.getElementById('connInfoModal').classList.remove('open');
+  });
+  document.getElementById('connInfoModal').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('connInfoModal'))
+      document.getElementById('connInfoModal').classList.remove('open');
   });
 }
