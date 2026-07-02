@@ -23,6 +23,7 @@ function detGetEnvSettings() {
     prodEnvs:           parseInt(document.getElementById('det-prodEnvs').value,           10) || 1,
     nonProdEnvs:        parseInt(document.getElementById('det-nonProdEnvs').value,         10) || 2,
     haReplicas:         parseInt(document.getElementById('det-haReplicas').value,           10) || 2,
+    haNonProdEnvs:      parseInt(document.getElementById('det-haNonProdEnvs').value,        10) || 0,
     flowsBuffer:        parseFloat(document.getElementById('det-flowsBuffer').value)       / 100 || 0.10,
     msgNonProdPct:      parseFloat(document.getElementById('det-msgNonProdPct').value)     / 100 || 0.40,
     msgBuffer:          parseFloat(document.getElementById('det-msgBuffer').value)         / 100 || 0.05,
@@ -140,8 +141,11 @@ function detCalcTotals() {
 
   detUseCases.forEach(function(uc) {
     var f = detCalcFlows(uc, env.haReplicas);
+    // Prod: all HA-replicated flows × prod env count
     flowsProd    += f.withHA * env.prodEnvs;
-    flowsNonProd += f.withHA * env.nonProdEnvs;
+    // Non-prod: HA only applied to the subset of non-prod envs configured for HA
+    var npHAFlows   = f.base + (f.withHA - f.base) * (env.haNonProdEnvs > 0 ? 1 : 0);
+    flowsNonProd += npHAFlows * env.nonProdEnvs;
 
     uc.components.forEach(function(comp) {
       if (comp.ha) anyHA = true;
@@ -262,7 +266,8 @@ function detRenderSummary() {
     annualMsgMax:  t.msgs.total,
     annualDataMin: t.data.total,
     annualDataMax: t.data.total,
-    needsHA:       t.needsHA
+    needsHA:       t.needsHA,
+    apiMgmt:       t.apiMgmt
   });
 
   var omniRow = t.omni.total > 0
@@ -672,7 +677,7 @@ function detInitEvents() {
   });
 
   // Env settings — refresh on any change
-  ['det-prodEnvs','det-nonProdEnvs','det-haReplicas','det-flowsBuffer',
+  ['det-prodEnvs','det-nonProdEnvs','det-haReplicas','det-haNonProdEnvs','det-flowsBuffer',
    'det-msgNonProdPct','det-msgBuffer','det-dataNonProdPct','det-dataBuffer',
    'det-omniNonProdPct','det-omniBuffer'].forEach(function(id) {
     document.getElementById(id).addEventListener('change', detRefresh);

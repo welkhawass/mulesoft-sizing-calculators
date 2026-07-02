@@ -88,26 +88,32 @@ function recommendPackage(totals) {
     reasons.push('within Starter limits');
   }
 
-  // Extra flows — power law: total_cost = A × qty × qty^B = A × qty^(1+B)
+  // Extra flows — flat rate per unit
   var extraFlows    = Math.max(0, totalFlows - pkg.flows);
-  var extraFlowCost = extraFlows > 0
-    ? pkg.extraFlowRate * extraFlows * Math.pow(extraFlows, FLOW_POWER_LAW.B)
-    : 0;
+  var extraFlowCost = extraFlows * pkg.extraFlowRate;
 
-  // Extra messages — power law: same B exponent, A = rate per 1M
+  // Extra messages — flat rate per 1M pack
   var extraMsgM    = Math.max(0, annualMsgMinM - pkg.messagesM);
-  var extraMsgCost = extraMsgM > 0
-    ? pkg.extraMsgRatePerM * extraMsgM * Math.pow(extraMsgM, MSG_POWER_LAW.B)
-    : 0;
+  var extraMsgCost = extraMsgM * pkg.extraMsgRatePerM;
 
   // Extra data
   var extraDataGB   = Math.max(0, annualDataMin - pkg.dataGB);
   var extraDataCost = extraDataGB * DATA_PRICE_PER_GB;
 
-  var totalListPrice = pkg.listPrice + extraFlowCost + extraMsgCost + extraDataCost;
+  // API Management overages (only when caller provides apiMgmt counts)
+  var apiMgmt = totals.apiMgmt || null;
+  var extraManagedProd    = apiMgmt ? Math.max(0, apiMgmt.manageProd    - pkg.managedApisProd)    : 0;
+  var extraManagedNonProd = apiMgmt ? Math.max(0, apiMgmt.manageNonProd - pkg.managedApisNonProd) : 0;
+  var extraGoverned       = apiMgmt ? Math.max(0, apiMgmt.govern        - pkg.governedApis)       : 0;
+  var apiMgmtCost = (extraManagedProd + extraManagedNonProd) * API_MGMT_PRICES.managedApiPerEnv
+                  + extraGoverned * API_MGMT_PRICES.governedApi;
+
+  var totalListPrice = pkg.listPrice + extraFlowCost + extraMsgCost + extraDataCost + apiMgmtCost;
 
   return { name: name, pkg: pkg, reasons: reasons,
            extraFlows: extraFlows, extraMsgM: extraMsgM, extraDataGB: extraDataGB,
+           extraManagedProd: extraManagedProd, extraManagedNonProd: extraManagedNonProd,
+           extraGoverned: extraGoverned, apiMgmtCost: apiMgmtCost,
            totalListPrice: totalListPrice };
 }
 
@@ -178,6 +184,17 @@ function pkgBreakdownHtml(rec, totalFlows, msgM, dataGB) {
             '<td class="col-metric">' + omniIncluded + '</td>' +
             '<td class="col-metric" style="color:#bbb;">—</td>' +
           '</tr>' +
+          (rec.apiMgmtCost > 0
+            ? '<tr style="background:#fff8e1;">' +
+                '<td colspan="4" style="font-size:0.8rem;color:#795548;padding:8px 14px;">' +
+                  '&#43; API Management overages: ' +
+                  (rec.extraManagedProd > 0    ? rec.extraManagedProd    + ' extra managed (prod) '    : '') +
+                  (rec.extraManagedNonProd > 0 ? rec.extraManagedNonProd + ' extra managed (non-prod) ' : '') +
+                  (rec.extraGoverned > 0       ? rec.extraGoverned       + ' extra governed '           : '') +
+                  '&rarr; ' + fmtUSD(rec.apiMgmtCost) +
+                '</td>' +
+              '</tr>'
+            : '') +
         '</tbody>' +
       '</table></div>' +
     '</div>' +

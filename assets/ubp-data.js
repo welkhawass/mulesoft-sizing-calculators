@@ -123,13 +123,18 @@ var PREMIUM_CONNECTORS = [
 // Per connector per environment (Production and Non-Production billed at the same rate)
 var PREMIUM_CONNECTOR_PRICE = 33600;
 
-// Power law for additional flows: price_per_unit = A × qty^B  →  total = A × qty^(1+B)
-// Source: Data - Do not touch, B97:B98  (Mule Flows: A=420, B=-0.1076851047)
+// Power-law constants — used in Methodology modal explanation only, NOT in pricing
+// (Actual SKU pricing is flat rate per unit: extraFlowRate × qty, extraMsgRatePerM × qty)
+// Source: Data - Do not touch, B91:B98
 var FLOW_POWER_LAW = { A: 420, B: -0.1076851047 };
+var MSG_POWER_LAW  = { B: -0.1912344768 };
 
-// Power law for additional messages: same curve shape
-// Source: Data - Do not touch, B91:B92  (Mule Messages: A=750 Advanced / 660 Starter, B=-0.1912344768)
-var MSG_POWER_LAW = { B: -0.1912344768 };
+// API Management overage prices (per additional API beyond package entitlement, per year)
+// Source: List Prices tab
+var API_MGMT_PRICES = {
+  managedApiPerEnv: 3240,   // $3,240 / extra API managed (prod or non-prod, billed equally)
+  governedApi:      1140    // $1,140 / extra API governed (production only)
+};
 
 // Additional data throughput: $48 per TB = $0.048 / GB
 // Source: List Prices tab, row 10
