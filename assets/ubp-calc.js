@@ -204,7 +204,7 @@ function pkgBreakdownHtml(rec, totalFlows, msgM, dataGB) {
             extraCell(rec.extraDataGB, fmtGB(rec.extraDataGB)) +
           '</tr>' +
           '<tr>' +
-            '<td>Omni / Flex GW calls / year</td>' +
+            '<td>Omni Gateway calls / year</td>' +
             '<td class="col-metric" style="color:#888;">—</td>' +
             '<td class="col-metric">' + omniIncluded + '</td>' +
             '<td class="col-metric" style="color:#bbb;">—</td>' +

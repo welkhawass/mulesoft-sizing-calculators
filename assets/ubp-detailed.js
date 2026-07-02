@@ -271,7 +271,7 @@ function detRenderSummary() {
   });
 
   var omniRow = t.omni.total > 0
-    ? '<tr><td>Omni Gateway API Calls / yr</td>' +
+    ? '<tr><td>Omni Gateway calls / year</td>' +
         '<td class="col-metric">' + fmtM(t.omni.prod  / 1e6) + '</td>' +
         '<td class="col-metric">' + fmtM(t.omni.np    / 1e6) + '</td>' +
         '<td class="col-metric">' + fmtM(t.omni.total / 1e6) + '</td></tr>'
