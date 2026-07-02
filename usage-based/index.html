@@ -86,8 +86,14 @@
       <div class="table-card">
         <div class="table-card-header">
           <h3>Use Cases <span id="simpUcCount" style="color:#aaa;font-weight:400;font-size:0.85rem;"></span></h3>
-          <button class="btn-add-uc" id="simpBtnAddUC">+ Add Use Case</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn-csv-template" id="simpBtnCSVTemplate">&#x2193; CSV Template</button>
+            <button class="btn-import-csv"   id="simpBtnImportCSV">&#x2191; Import CSV</button>
+            <input  type="file" id="simpCSVInput" accept=".csv,text/csv" style="display:none;" />
+            <button class="btn-add-uc"        id="simpBtnAddUC">+ Add Use Case</button>
+          </div>
         </div>
+        <div id="simpImportResult" class="import-result" style="display:none;"></div>
         <div id="simpTableArea"></div>
       </div>
 

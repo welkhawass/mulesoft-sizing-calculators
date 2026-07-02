@@ -517,6 +517,44 @@ table.uc-table {
 
 .lock-error { color: #ff6b6b; font-size: 0.8rem; margin-top: 10px; min-height: 1.2em; }
 
+/* ── CSV import controls ── */
+.btn-import-csv {
+  background: none;
+  border: 1px solid #00a0df;
+  color: #00a0df;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-import-csv:hover { background: #f0f8ff; }
+
+.btn-csv-template {
+  background: none;
+  border: 1px solid #b0c4ce;
+  color: #888;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-csv-template:hover { border-color: #00a0df; color: #00a0df; }
+
+.import-result {
+  margin: 0 20px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.83rem;
+  line-height: 1.5;
+  border: 1px solid transparent;
+}
+.import-result-ok   { background: #e8f5e9; border-color: #a5d6a7; color: #2e7d32; }
+.import-result-warn { background: #fff8e1; border-color: #ffe082; color: #795548; }
+
 /* ── Premium connector controls ── */
 .btn-conn-info {
   background: none; border: 1px solid #00a0df; color: #00a0df;
