@@ -136,12 +136,38 @@ function pkgBreakdownHtml(rec, totalFlows, msgM, dataGB) {
     return '<td class="col-metric" style="color:#c62828;font-weight:700;">' + fmt + '</td>';
   }
 
-  var haWarning = rec.reasons.indexOf('HA required (Advanced only)') >= 0
-    ? '<tr style="background:#fff8e1;"><td colspan="4" style="font-size:0.8rem;color:#795548;padding:8px 14px;">' +
-        '&#9888; HA is only available in Integration Advanced</td></tr>'
-    : '';
-
   var omniIncluded = fmtM(pkg.omniCallsM);
+
+  var apiMgmtRows = '';
+  if (rec.extraManagedProd > 0 || rec.extraManagedNonProd > 0 || rec.extraGoverned > 0) {
+    if (rec.extraManagedProd > 0 || rec.extraManagedNonProd > 0) {
+      var totalManagedRequired = (rec.extraManagedProd > 0 ? pkg.managedApisProd + rec.extraManagedProd : pkg.managedApisProd);
+      var totalManagedNPRequired = (rec.extraManagedNonProd > 0 ? pkg.managedApisNonProd + rec.extraManagedNonProd : pkg.managedApisNonProd);
+      apiMgmtRows +=
+        '<tr>' +
+          '<td>APIs to Manage (prod)</td>' +
+          '<td class="col-metric">' + statusIcon(totalManagedRequired, pkg.managedApisProd) + ' ' + totalManagedRequired + '</td>' +
+          '<td class="col-metric">' + pkg.managedApisProd + '</td>' +
+          extraCell(rec.extraManagedProd, rec.extraManagedProd + ' APIs') +
+        '</tr>' +
+        '<tr>' +
+          '<td>APIs to Manage (non-prod)</td>' +
+          '<td class="col-metric">' + statusIcon(totalManagedNPRequired, pkg.managedApisNonProd) + ' ' + totalManagedNPRequired + '</td>' +
+          '<td class="col-metric">' + pkg.managedApisNonProd + '</td>' +
+          extraCell(rec.extraManagedNonProd, rec.extraManagedNonProd + ' APIs') +
+        '</tr>';
+    }
+    if (rec.extraGoverned > 0) {
+      var totalGoverned = pkg.governedApis + rec.extraGoverned;
+      apiMgmtRows +=
+        '<tr>' +
+          '<td>APIs to Govern (prod)</td>' +
+          '<td class="col-metric">' + statusIcon(totalGoverned, pkg.governedApis) + ' ' + totalGoverned + '</td>' +
+          '<td class="col-metric">' + pkg.governedApis + '</td>' +
+          extraCell(rec.extraGoverned, rec.extraGoverned + ' APIs') +
+        '</tr>';
+    }
+  }
 
   return '<div class="pkg-row" style="overflow-x:auto;">' +
     '<div class="pkg-badge ' + (rec.name === 'Advanced' ? 'advanced' : '') + '">' + rec.name + '</div>' +
@@ -159,7 +185,6 @@ function pkgBreakdownHtml(rec, totalFlows, msgM, dataGB) {
           '<th class="col-metric">Additional needed</th>' +
         '</tr></thead>' +
         '<tbody>' +
-          haWarning +
           '<tr>' +
             '<td>Flows</td>' +
             '<td class="col-metric">' + statusIcon(totalFlows, pkg.flows) + ' ' + totalFlows + '</td>' +
@@ -184,17 +209,7 @@ function pkgBreakdownHtml(rec, totalFlows, msgM, dataGB) {
             '<td class="col-metric">' + omniIncluded + '</td>' +
             '<td class="col-metric" style="color:#bbb;">—</td>' +
           '</tr>' +
-          (rec.apiMgmtCost > 0
-            ? '<tr style="background:#fff8e1;">' +
-                '<td colspan="4" style="font-size:0.8rem;color:#795548;padding:8px 14px;white-space:normal;">' +
-                  '&#43; API Management overages: ' +
-                  (rec.extraManagedProd > 0    ? rec.extraManagedProd    + ' extra managed (prod) '    : '') +
-                  (rec.extraManagedNonProd > 0 ? rec.extraManagedNonProd + ' extra managed (non-prod) ' : '') +
-                  (rec.extraGoverned > 0       ? rec.extraGoverned       + ' extra governed '           : '') +
-                  '&rarr; ' + fmtUSD(rec.apiMgmtCost) +
-                '</td>' +
-              '</tr>'
-            : '') +
+          apiMgmtRows +
         '</tbody>' +
       '</table></div>' +
     '</div>' +
