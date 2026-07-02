@@ -308,13 +308,6 @@ function simpHandleCSVFile(file) {
 
 function simpDownloadTemplate() {
   var lines = [
-    '# MuleSoft UBP — Use Cases CSV Template',
-    '# intType    : API/Microservices | Event-Based | Schedule-Based',
-    '# systems    : 1-2 | 3-5 | 6-10 | 10+',
-    '# bizObjects : 1-2 | 3-5 | 6-10 | 10+',
-    '# tasks      : 0-10K | 10K-100K | 100K-500K | 500K-10M  (per month)',
-    '# payload    : 0-100KB | 101KB-500KB | 501KB-1MB | 1MB-10MB | 10MB+',
-    '# bidir      : true | false',
     'name,intType,systems,bizObjects,tasks,payload,bidir',
     'Order Management API,API/Microservices,3-5,3-5,0-10K,0-100KB,false',
     'Customer Portal API,API/Microservices,1-2,3-5,10K-100K,0-100KB,false',
