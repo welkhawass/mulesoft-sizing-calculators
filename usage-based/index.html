@@ -296,14 +296,39 @@
             <label>HA Required?</label>
             <label class="toggle"><input type="checkbox" id="dc-ha" /><span class="toggle-slider"></span></label>
           </div>
+
+          <!-- API/Microservices flow details -->
+          <div id="dc-flow-api" style="display:none;border-top:1px solid #eef2f6;padding-top:10px;margin-top:4px;">
+            <div style="font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#999;margin-bottom:8px;">Flow Detail &mdash; API/Microservices</div>
+            <div class="form-group"><label># Operations</label>
+              <input type="number" id="dc-operations" value="4" min="0" /></div>
+            <div class="form-group"><label>API Console flows</label>
+              <input type="number" id="dc-apiConsole" value="1" min="0" /></div>
+            <div class="form-group"><label>HTTP Listener flows</label>
+              <input type="number" id="dc-httpListener" value="1" min="0" /></div>
+          </div>
+
+          <!-- Event-Based flow details -->
+          <div id="dc-flow-event" style="display:none;border-top:1px solid #eef2f6;padding-top:10px;margin-top:4px;">
+            <div style="font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#999;margin-bottom:8px;">Flow Detail &mdash; Event-Based</div>
+            <div class="form-group"><label># Queues / Channels / Event Types</label>
+              <input type="number" id="dc-queues" value="1" min="1" /></div>
+          </div>
+
+          <!-- Schedule-Based flow details -->
+          <div id="dc-flow-sched" style="display:none;border-top:1px solid #eef2f6;padding-top:10px;margin-top:4px;">
+            <div style="font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#999;margin-bottom:8px;">Flow Detail &mdash; Schedule-Based</div>
+            <div class="form-group"><label># Entities / Objects</label>
+              <input type="number" id="dc-entities" value="1" min="1" /></div>
+            <div class="form-group toggle-row">
+              <label>Bidirectional?</label>
+              <label class="toggle"><input type="checkbox" id="dc-schedBidir" /><span class="toggle-slider"></span></label>
+            </div>
+          </div>
         </div>
         <div class="modal-preview">
-          <h4>Component Info</h4>
-          <p style="font-size:0.82rem;color:#888;line-height:1.6;padding:8px 0;">
-            Fill in Tasks and Period to quantify message volume.<br/>
-            Payload size determines data throughput.<br/>
-            Omni Gateway components are counted separately for API call sizing.
-          </p>
+          <h4>Live Estimate</h4>
+          <div id="detCompPreview"><div class="prev-placeholder">Select type and fill inputs to see the estimate</div></div>
         </div>
       </div>
       <div class="modal-footer">
@@ -342,13 +367,41 @@
           <p>Direction factor: 4 for bidirectional, 2 for unidirectional.</p>
         </div>
         <div class="method-section">
+          <h4>Detailed — Flows per Component</h4>
+          <p>Flows are calculated precisely per component based on integration type:</p>
+          <table class="method-table">
+            <tr><th>Type</th><th>Formula</th><th>Defaults</th></tr>
+            <tr><td>API / Microservices</td><td>operations + API Console + HTTP Listener</td><td>4 + 1 + 1 = 6</td></tr>
+            <tr><td>Event-Based</td><td>queues / channels / event types</td><td>1</td></tr>
+            <tr><td>Schedule-Based</td><td>entities × (bidirectional ? 2 : 1)</td><td>1 × 1 = 1</td></tr>
+          </table>
+          <p style="margin-top:8px;">HA components are multiplied by the HA replica count. Flows then scale by production and non-production environment counts, plus the flows buffer.</p>
+        </div>
+        <div class="method-section">
           <h4>Detailed — Messages (annual)</h4>
-          <div class="formula-box">annual = tasks × time_multiplier(period, bizHours, bizDays)</div>
-          <p>Multipliers: Second=3600×hours×days, Minute=60×hours×days, Hour=hours×days, Day=days, Month=12, Year=1.</p>
+          <div class="formula-box">annual_msgs = tasks × time_multiplier(period, bizHours, bizDays)</div>
+          <p>Time multipliers: Second = 3,600 × hours × days &nbsp;|&nbsp; Minute = 60 × hours × days &nbsp;|&nbsp; Hour = hours × days &nbsp;|&nbsp; Day = days &nbsp;|&nbsp; Month = 12 &nbsp;|&nbsp; Year = 1.</p>
+        </div>
+        <div class="method-section">
+          <h4>Detailed — Environment Scaling</h4>
+          <div class="formula-box">
+prod_msgs  = base_msgs × prod_envs × (1 + msg_buffer)<br/>
+np_msgs    = base_msgs × non_prod_envs × non_prod_pct × (1 + msg_buffer)<br/>
+prod_flows = base_flows × prod_envs × (1 + flows_buffer)
+          </div>
+        </div>
+        <div class="method-section">
+          <h4>Detailed — API Management Totals</h4>
+          <p>Counted only for MuleSoft components with type <em>API / Microservices</em>.</p>
+          <div class="formula-box">
+APIs to Manage (Prod)     = # API/MS components × prod_envs<br/>
+APIs to Manage (Non-Prod) = # API/MS components × non_prod_envs<br/>
+APIs to Govern            = APIs to Manage (Prod only)
+          </div>
         </div>
         <div class="method-section">
           <h4>Detailed — Omni Gateway</h4>
-          <p>Components marked as "Omni Gateway" represent APIs hosted outside Anypoint Platform that will be managed through it. Their task volume counts as Omni Gateway API calls, sized separately from MuleSoft runtime messages.</p>
+          <p>Components implemented as "Omni Gateway" represent APIs hosted outside Anypoint Platform. Their task volume counts as Omni Gateway API calls, sized separately from MuleSoft runtime messages.</p>
         </div>
         <div class="method-section">
           <h4>Package Recommendation</h4>

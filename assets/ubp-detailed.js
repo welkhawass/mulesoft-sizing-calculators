@@ -10,16 +10,16 @@ var detEditing   = { ucIdx: -1, compIdx: -1 };
 // ── Environment settings (with defaults) ──
 function detGetEnvSettings() {
   return {
-    prodEnvs:        parseInt(document.getElementById('det-prodEnvs').value,   10) || 1,
-    nonProdEnvs:     parseInt(document.getElementById('det-nonProdEnvs').value, 10) || 2,
-    haReplicas:      parseInt(document.getElementById('det-haReplicas').value,  10) || 2,
-    flowsBuffer:     parseFloat(document.getElementById('det-flowsBuffer').value)  / 100 || 0.10,
-    msgNonProdPct:   parseFloat(document.getElementById('det-msgNonProdPct').value) / 100 || 0.40,
-    msgBuffer:       parseFloat(document.getElementById('det-msgBuffer').value)    / 100 || 0.05,
-    dataNonProdPct:  parseFloat(document.getElementById('det-dataNonProdPct').value)/ 100 || 0.40,
-    dataBuffer:      parseFloat(document.getElementById('det-dataBuffer').value)   / 100 || 0.05,
-    omniNonProdPct:  parseFloat(document.getElementById('det-omniNonProdPct').value)/ 100 || 0.20,
-    omniBuffer:      parseFloat(document.getElementById('det-omniBuffer').value)   / 100 || 0.10
+    prodEnvs:           parseInt(document.getElementById('det-prodEnvs').value,           10) || 1,
+    nonProdEnvs:        parseInt(document.getElementById('det-nonProdEnvs').value,         10) || 2,
+    haReplicas:         parseInt(document.getElementById('det-haReplicas').value,           10) || 2,
+    flowsBuffer:        parseFloat(document.getElementById('det-flowsBuffer').value)       / 100 || 0.10,
+    msgNonProdPct:      parseFloat(document.getElementById('det-msgNonProdPct').value)     / 100 || 0.40,
+    msgBuffer:          parseFloat(document.getElementById('det-msgBuffer').value)         / 100 || 0.05,
+    dataNonProdPct:     parseFloat(document.getElementById('det-dataNonProdPct').value)    / 100 || 0.40,
+    dataBuffer:         parseFloat(document.getElementById('det-dataBuffer').value)        / 100 || 0.05,
+    omniNonProdPct:     parseFloat(document.getElementById('det-omniNonProdPct').value)    / 100 || 0.20,
+    omniBuffer:         parseFloat(document.getElementById('det-omniBuffer').value)        / 100 || 0.10,
   };
 }
 
@@ -44,24 +44,27 @@ function detCopyFromSimplified() {
   if (simpUseCases.length === 0) return;
   detUseCases = simpUseCases.map(function(uc) {
     var compName  = (uc.name || 'Use Case') + ' - Process API';
-    var baseTasks = TASKS_BUCKET_MAP[uc.tasks]   || 5000;
+    var baseTasks = TASKS_BUCKET_MAP[uc.tasks]    || 5000;
     var payloadKB = PAYLOAD_BUCKET_MAP[uc.payload] || 50;
-    // Bidirectional doubles the effective task volume (same as simplified logic)
     var tasks     = uc.bidir ? baseTasks * 2 : baseTasks;
-    return {
-      name: uc.name || '',
-      components: [{
-        name:       compName,
-        intType:    uc.intType,
-        impl:       'MuleSoft',
-        tasks:      tasks,
-        taskPeriod: 'Month',
-        bizHours:   8,
-        bizDays:    220,
-        payloadKB:  payloadKB,
-        ha:         false
-      }]
+    var comp = {
+      name:         compName,
+      intType:      uc.intType,
+      impl:         'MuleSoft',
+      tasks:        tasks,
+      taskPeriod:   'Month',
+      bizHours:     8,
+      bizDays:      220,
+      payloadKB:    payloadKB,
+      ha:           false,
+      operations:   4,
+      apiConsole:   1,
+      httpListener: 1,
+      queues:       1,
+      entities:     1,
+      schedBidir:   (uc.intType === 'Schedule-Based' && uc.bidir) ? true : false
     };
+    return { name: uc.name || '', components: [comp] };
   });
   detRefresh();
 }
@@ -79,7 +82,7 @@ function detAnnualMultiplier(period, bizHours, bizDays) {
   }
 }
 
-// ── Calculate one component ──
+// ── Calculate one component's messages & data ──
 function detCalcComponent(comp) {
   if (!comp.tasks || isNaN(parseFloat(comp.tasks))) return null;
   var tasks       = parseFloat(comp.tasks);
@@ -89,15 +92,28 @@ function detCalcComponent(comp) {
   return { msgs: msgs, dataGB: dataGB, isMuleSoft: comp.impl === 'MuleSoft', ha: comp.ha };
 }
 
-// ── Calculate flows for a use case (1:1 mapping = 1 component) ──
+// ── Calculate flows for a single component ──
+function detCompFlows(comp) {
+  if (comp.impl !== 'MuleSoft') return 0;
+  if (comp.intType === 'API/Microservices') {
+    return (comp.operations  !== undefined ? comp.operations  : 4) +
+           (comp.apiConsole  !== undefined ? comp.apiConsole  : 1) +
+           (comp.httpListener !== undefined ? comp.httpListener : 1);
+  }
+  if (comp.intType === 'Event-Based') {
+    return comp.queues !== undefined ? comp.queues : 1;
+  }
+  if (comp.intType === 'Schedule-Based') {
+    return (comp.entities !== undefined ? comp.entities : 1) * (comp.schedBidir ? 2 : 1);
+  }
+  return 0;
+}
+
+// ── Calculate flows for a use case (sum of components) ──
 function detCalcFlows(uc, haReplicas) {
   var total = 0, haFlows = 0;
   uc.components.forEach(function(comp) {
-    if (comp.impl !== 'MuleSoft') return;
-    var f = 0;
-    if (comp.intType === 'API/Microservices') f = 6;   // 4 ops + 1 console + 1 listener default
-    else if (comp.intType === 'Event-Based')  f = 3;
-    else if (comp.intType === 'Schedule-Based') f = 4;
+    var f = detCompFlows(comp);
     total += f;
     if (comp.ha) haFlows += f;
   });
@@ -110,6 +126,7 @@ function detCalcTotals() {
   var env = detGetEnvSettings();
   var baseMsgs = 0, baseDataGB = 0, baseOmniMsgs = 0;
   var flowsProd = 0, flowsNonProd = 0;
+  var apiMSCount = 0, anyHA = false;
 
   detUseCases.forEach(function(uc) {
     var f = detCalcFlows(uc, env.haReplicas);
@@ -117,35 +134,42 @@ function detCalcTotals() {
     flowsNonProd += f.withHA * env.nonProdEnvs;
 
     uc.components.forEach(function(comp) {
+      if (comp.ha) anyHA = true;
       var r = detCalcComponent(comp);
       if (!r) return;
       if (comp.impl === 'MuleSoft') {
         baseMsgs   += r.msgs;
         baseDataGB += r.dataGB;
+        if (comp.intType === 'API/Microservices') apiMSCount++;
       } else {
         baseOmniMsgs += r.msgs;
       }
     });
   });
 
-  var flowsBuf   = 1 + env.flowsBuffer;
-  var prodFlows  = Math.ceil(flowsProd  * flowsBuf);
-  var npFlows    = Math.ceil(flowsNonProd * flowsBuf);
+  var flowsBuf  = 1 + env.flowsBuffer;
+  var prodFlows = Math.ceil(flowsProd    * flowsBuf);
+  var npFlows   = Math.ceil(flowsNonProd * flowsBuf);
 
-  var msgProd    = Math.ceil(baseMsgs   * env.prodEnvs   * (1 + env.msgBuffer));
-  var msgNP      = Math.ceil(baseMsgs   * env.nonProdEnvs * env.msgNonProdPct * (1 + env.msgBuffer));
+  var msgProd   = Math.ceil(baseMsgs   * env.prodEnvs   * (1 + env.msgBuffer));
+  var msgNP     = Math.ceil(baseMsgs   * env.nonProdEnvs * env.msgNonProdPct * (1 + env.msgBuffer));
 
-  var dataProd   = baseDataGB * env.prodEnvs   * (1 + env.dataBuffer);
-  var dataNP     = baseDataGB * env.nonProdEnvs * env.dataNonProdPct * (1 + env.dataBuffer);
+  var dataProd  = baseDataGB * env.prodEnvs   * (1 + env.dataBuffer);
+  var dataNP    = baseDataGB * env.nonProdEnvs * env.dataNonProdPct * (1 + env.dataBuffer);
 
-  var omniProd   = Math.ceil(baseOmniMsgs * env.prodEnvs   * (1 + env.omniBuffer));
-  var omniNP     = Math.ceil(baseOmniMsgs * env.nonProdEnvs * env.omniNonProdPct * (1 + env.omniBuffer));
+  var omniProd  = Math.ceil(baseOmniMsgs * env.prodEnvs   * (1 + env.omniBuffer));
+  var omniNP    = Math.ceil(baseOmniMsgs * env.nonProdEnvs * env.omniNonProdPct * (1 + env.omniBuffer));
+
+  var apiMgmtProd    = apiMSCount * env.prodEnvs;
+  var apiMgmtNonProd = apiMSCount * env.nonProdEnvs;
 
   return {
-    flows:    { prod: prodFlows, np: npFlows,  total: prodFlows + npFlows },
-    msgs:     { prod: msgProd,   np: msgNP,    total: msgProd + msgNP },
-    data:     { prod: dataProd,  np: dataNP,   total: dataProd + dataNP },
-    omni:     { prod: omniProd,  np: omniNP,   total: omniProd + omniNP }
+    flows:   { prod: prodFlows, np: npFlows,   total: prodFlows + npFlows },
+    msgs:    { prod: msgProd,   np: msgNP,      total: msgProd   + msgNP   },
+    data:    { prod: dataProd,  np: dataNP,     total: dataProd  + dataNP  },
+    omni:    { prod: omniProd,  np: omniNP,     total: omniProd  + omniNP  },
+    apiMgmt: { manageProd: apiMgmtProd, manageNonProd: apiMgmtNonProd, govern: apiMgmtProd },
+    needsHA: anyHA
   };
 }
 
@@ -165,10 +189,9 @@ function detRenderTable() {
 
   var rows = '';
   detUseCases.forEach(function(uc, ucIdx) {
-    // Use case header row
     rows += '<tr class="det-uc-row">' +
       '<td class="col-num">' + (ucIdx + 1) + '</td>' +
-      '<td colspan="5" style="font-weight:700;color:#0070ad;">' +
+      '<td colspan="6" style="font-weight:700;color:#0070ad;">' +
         (uc.name || 'Use Case ' + (ucIdx + 1)) + '</td>' +
       '<td class="col-actions">' +
         '<button class="btn-action" onclick="detOpenUCModal(' + ucIdx + ')">Edit</button>' +
@@ -176,18 +199,20 @@ function detRenderTable() {
         '<button class="btn-action btn-del" onclick="detDeleteUC(' + ucIdx + ')">Delete</button>' +
       '</td></tr>';
 
-    // Component rows
     uc.components.forEach(function(comp, cIdx) {
-      var implTag = comp.impl === 'MuleSoft'
+      var implTag  = comp.impl === 'MuleSoft'
         ? '<span class="tag tag-api">MuleSoft</span>'
         : '<span class="tag tag-event">Omni GW</span>';
-      var haTag = comp.ha ? '<span class="tag tag-bidir">HA</span>' : '';
-      var taskStr = comp.tasks ? comp.tasks + ' / ' + comp.taskPeriod : '—';
+      var haTag    = comp.ha ? '<span class="tag tag-bidir">HA</span>' : '';
+      var taskStr  = comp.tasks ? comp.tasks + ' / ' + comp.taskPeriod : '—';
+      var flowsVal = detCompFlows(comp);
+      var flowsStr = (comp.impl === 'MuleSoft' && comp.intType) ? String(flowsVal) : '—';
       rows += '<tr class="det-comp-row">' +
-        '<td class="col-num" style="color:#ddd;">↳</td>' +
+        '<td class="col-num" style="color:#ddd;">&#8627;</td>' +
         '<td class="col-name" style="padding-left:24px;">' + (comp.name || 'Component') + '</td>' +
         '<td>' + detTypeTag(comp.intType) + haTag + '</td>' +
         '<td>' + implTag + '</td>' +
+        '<td style="text-align:right;font-weight:600;color:#0070ad;">' + flowsStr + '</td>' +
         '<td>' + taskStr + '</td>' +
         '<td>' + (comp.payloadKB ? comp.payloadKB + ' KB' : '—') + '</td>' +
         '<td class="col-actions">' +
@@ -199,6 +224,7 @@ function detRenderTable() {
 
   area.innerHTML = '<div class="uc-table-wrap"><table class="uc-table"><thead><tr>' +
     '<th class="col-num">#</th><th>Name</th><th>Type</th><th>Impl.</th>' +
+    '<th style="text-align:right;min-width:60px;">Flows</th>' +
     '<th>Tasks</th><th>Payload</th><th class="col-actions"></th>' +
     '</tr></thead><tbody>' + rows + '</tbody></table></div>';
 }
@@ -225,15 +251,38 @@ function detRenderSummary() {
     annualMsgMin:  t.msgs.total,
     annualMsgMax:  t.msgs.total,
     annualDataMin: t.data.total,
-    annualDataMax: t.data.total
+    annualDataMax: t.data.total,
+    needsHA:       t.needsHA
   });
 
   var omniRow = t.omni.total > 0
-    ? '<tr><td>Omni Gateway API Calls</td>' +
+    ? '<tr><td>Omni Gateway API Calls / yr</td>' +
         '<td class="col-metric">' + fmtM(t.omni.prod  / 1e6) + '</td>' +
         '<td class="col-metric">' + fmtM(t.omni.np    / 1e6) + '</td>' +
         '<td class="col-metric">' + fmtM(t.omni.total / 1e6) + '</td></tr>'
     : '';
+
+  var apiMgmtSection = '';
+  if (t.apiMgmt.manageProd > 0) {
+    apiMgmtSection =
+      '<div style="font-weight:700;font-size:0.82rem;color:#0070ad;text-transform:uppercase;' +
+        'letter-spacing:0.04em;margin:16px 0 8px;">API Management Totals</div>' +
+      '<div style="overflow-x:auto;margin-bottom:20px;">' +
+      '<table class="uc-table">' +
+        '<thead><tr><th>Metric</th><th class="col-metric">Production</th>' +
+          '<th class="col-metric">Non-Prod</th><th class="col-metric">Total</th></tr></thead>' +
+        '<tbody>' +
+          '<tr><td>APIs to Manage</td>' +
+            '<td class="col-metric">' + t.apiMgmt.manageProd    + '</td>' +
+            '<td class="col-metric">' + t.apiMgmt.manageNonProd + '</td>' +
+            '<td class="col-metric">' + (t.apiMgmt.manageProd + t.apiMgmt.manageNonProd) + '</td></tr>' +
+          '<tr><td>APIs to Govern</td>' +
+            '<td class="col-metric">' + t.apiMgmt.govern + '</td>' +
+            '<td class="col-metric" style="color:#bbb;">—</td>' +
+            '<td class="col-metric">' + t.apiMgmt.govern + '</td></tr>' +
+        '</tbody>' +
+      '</table></div>';
+  }
 
   el.innerHTML =
     '<div style="overflow-x:auto;margin-bottom:20px;">' +
@@ -256,15 +305,8 @@ function detRenderSummary() {
         omniRow +
       '</tbody>' +
     '</table></div>' +
-    '<div class="pkg-row">' +
-      '<div class="pkg-badge ' + (rec.name === 'Advanced' ? 'advanced' : '') + '">' + rec.name + '</div>' +
-      '<div class="pkg-details">' +
-        '<div class="pkg-name">Integration ' + rec.name + ' Package</div>' +
-        '<div class="pkg-price">' + fmtUSD(rec.totalListPrice) +
-          ' <span style="font-size:0.85rem;font-weight:400;color:#888;">/ year (list price, USD)</span></div>' +
-        '<div class="pkg-reason">' + rec.reasons.join(' &bull; ') + '</div>' +
-      '</div>' +
-    '</div>';
+    apiMgmtSection +
+    pkgBreakdownHtml(rec, t.flows.total, t.msgs.total / 1e6, t.data.total);
 }
 
 function detRefresh() {
@@ -296,8 +338,11 @@ function detAddComponent(ucIdx) {
   var uc       = detUseCases[ucIdx];
   var compName = (uc.name || 'Use Case ' + (ucIdx + 1)) + ' - Process API';
   detEditing   = { ucIdx: ucIdx, compIdx: -1 };
-  detFillCompModal({ name: compName, intType: '', impl: 'MuleSoft', tasks: '', taskPeriod: 'Month',
-                     bizHours: 8, bizDays: 220, payloadKB: 50, ha: false });
+  detFillCompModal({
+    name: compName, intType: '', impl: 'MuleSoft',
+    tasks: '', taskPeriod: 'Month', bizHours: 8, bizDays: 220, payloadKB: 50, ha: false,
+    operations: 4, apiConsole: 1, httpListener: 1, queues: 1, entities: 1, schedBidir: false
+  });
   document.getElementById('detCompModalTitle').textContent = 'Add Component';
   document.getElementById('detCompModal').classList.add('open');
 }
@@ -311,29 +356,95 @@ function detOpenCompModal(ucIdx, cIdx) {
 }
 
 function detFillCompModal(comp) {
-  document.getElementById('dc-name').value      = comp.name       || '';
-  document.getElementById('dc-intType').value   = comp.intType    || '';
-  document.getElementById('dc-impl').value      = comp.impl       || 'MuleSoft';
-  document.getElementById('dc-tasks').value     = comp.tasks      || '';
-  document.getElementById('dc-taskPeriod').value= comp.taskPeriod || 'Month';
-  document.getElementById('dc-bizHours').value  = comp.bizHours   !== undefined ? comp.bizHours  : 8;
-  document.getElementById('dc-bizDays').value   = comp.bizDays    !== undefined ? comp.bizDays   : 220;
-  document.getElementById('dc-payloadKB').value = comp.payloadKB  !== undefined ? comp.payloadKB : 50;
-  document.getElementById('dc-ha').checked      = comp.ha || false;
+  document.getElementById('dc-name').value         = comp.name         || '';
+  document.getElementById('dc-intType').value      = comp.intType      || '';
+  document.getElementById('dc-impl').value         = comp.impl         || 'MuleSoft';
+  document.getElementById('dc-tasks').value        = comp.tasks        || '';
+  document.getElementById('dc-taskPeriod').value   = comp.taskPeriod   || 'Month';
+  document.getElementById('dc-bizHours').value     = comp.bizHours     !== undefined ? comp.bizHours     : 8;
+  document.getElementById('dc-bizDays').value      = comp.bizDays      !== undefined ? comp.bizDays      : 220;
+  document.getElementById('dc-payloadKB').value    = comp.payloadKB    !== undefined ? comp.payloadKB    : 50;
+  document.getElementById('dc-ha').checked         = comp.ha || false;
+  document.getElementById('dc-operations').value   = comp.operations   !== undefined ? comp.operations   : 4;
+  document.getElementById('dc-apiConsole').value   = comp.apiConsole   !== undefined ? comp.apiConsole   : 1;
+  document.getElementById('dc-httpListener').value = comp.httpListener  !== undefined ? comp.httpListener  : 1;
+  document.getElementById('dc-queues').value       = comp.queues       !== undefined ? comp.queues       : 1;
+  document.getElementById('dc-entities').value     = comp.entities     !== undefined ? comp.entities     : 1;
+  document.getElementById('dc-schedBidir').checked = comp.schedBidir || false;
+  detUpdateCompFlowDetail();
+  detUpdateCompPreview();
 }
 
 function detReadCompModal() {
   return {
-    name:       document.getElementById('dc-name').value.trim(),
-    intType:    document.getElementById('dc-intType').value,
-    impl:       document.getElementById('dc-impl').value,
-    tasks:      document.getElementById('dc-tasks').value,
-    taskPeriod: document.getElementById('dc-taskPeriod').value,
-    bizHours:   parseFloat(document.getElementById('dc-bizHours').value)  || 8,
-    bizDays:    parseFloat(document.getElementById('dc-bizDays').value)   || 220,
-    payloadKB:  parseFloat(document.getElementById('dc-payloadKB').value) || 50,
-    ha:         document.getElementById('dc-ha').checked
+    name:         document.getElementById('dc-name').value.trim(),
+    intType:      document.getElementById('dc-intType').value,
+    impl:         document.getElementById('dc-impl').value,
+    tasks:        document.getElementById('dc-tasks').value,
+    taskPeriod:   document.getElementById('dc-taskPeriod').value,
+    bizHours:     parseFloat(document.getElementById('dc-bizHours').value)    || 8,
+    bizDays:      parseFloat(document.getElementById('dc-bizDays').value)     || 220,
+    payloadKB:    parseFloat(document.getElementById('dc-payloadKB').value)   || 50,
+    ha:           document.getElementById('dc-ha').checked,
+    operations:   parseInt(document.getElementById('dc-operations').value,   10) || 4,
+    apiConsole:   parseInt(document.getElementById('dc-apiConsole').value,   10) || 1,
+    httpListener: parseInt(document.getElementById('dc-httpListener').value,  10) || 1,
+    queues:       parseInt(document.getElementById('dc-queues').value,       10) || 1,
+    entities:     parseInt(document.getElementById('dc-entities').value,     10) || 1,
+    schedBidir:   document.getElementById('dc-schedBidir').checked
   };
+}
+
+// ── Show / hide conditional flow-detail fields ──
+function detUpdateCompFlowDetail() {
+  var type = document.getElementById('dc-intType').value;
+  document.getElementById('dc-flow-api').style.display   = (type === 'API/Microservices') ? '' : 'none';
+  document.getElementById('dc-flow-event').style.display = (type === 'Event-Based')        ? '' : 'none';
+  document.getElementById('dc-flow-sched').style.display = (type === 'Schedule-Based')     ? '' : 'none';
+  detUpdateCompPreview();
+}
+
+// ── Live preview in component modal ──
+function detUpdateCompPreview() {
+  var el = document.getElementById('detCompPreview');
+  if (!el) return;
+  var intType = document.getElementById('dc-intType').value;
+  var impl    = document.getElementById('dc-impl').value;
+  var html    = '';
+
+  if (impl === 'MuleSoft' && intType) {
+    var f = 0;
+    if (intType === 'API/Microservices') {
+      f = (parseInt(document.getElementById('dc-operations').value,   10) || 4) +
+          (parseInt(document.getElementById('dc-apiConsole').value,   10) || 1) +
+          (parseInt(document.getElementById('dc-httpListener').value, 10) || 1);
+    } else if (intType === 'Event-Based') {
+      f = parseInt(document.getElementById('dc-queues').value, 10) || 1;
+    } else if (intType === 'Schedule-Based') {
+      f = (parseInt(document.getElementById('dc-entities').value, 10) || 1) *
+          (document.getElementById('dc-schedBidir').checked ? 2 : 1);
+    }
+    html += '<div class="prev-row"><span>Flows (this component)</span><span>' + f + '</span></div>';
+  }
+
+  var tasks   = parseFloat(document.getElementById('dc-tasks').value);
+  var period  = document.getElementById('dc-taskPeriod').value;
+  var bh      = parseFloat(document.getElementById('dc-bizHours').value)  || 8;
+  var bd      = parseFloat(document.getElementById('dc-bizDays').value)   || 220;
+  var payload = parseFloat(document.getElementById('dc-payloadKB').value) || 50;
+
+  if (tasks && !isNaN(tasks)) {
+    var comp = { tasks: tasks, taskPeriod: period, bizHours: bh, bizDays: bd,
+                 payloadKB: payload, impl: impl, ha: false };
+    var r = detCalcComponent(comp);
+    if (r) {
+      html += '<div class="prev-row"><span>Messages / year</span><span>' + fmtM(r.msgs / 1e6) + '</span></div>';
+      html += '<div class="prev-row"><span>Data / year</span><span>' + fmtGB(r.dataGB) + '</span></div>';
+    }
+  }
+
+  if (!html) html = '<div class="prev-placeholder">Complete the inputs to see the estimate</div>';
+  el.innerHTML = html;
 }
 
 function detCloseCompModal() {
@@ -366,20 +477,33 @@ function detInitEvents() {
     detRefresh();
   });
 
-  // Component modal
+  // Component modal — close / save
   document.getElementById('detCompBtnClose').addEventListener('click',  detCloseCompModal);
   document.getElementById('detCompBtnCancel').addEventListener('click', detCloseCompModal);
   document.getElementById('detCompModal').addEventListener('click', function(e) {
     if (e.target === document.getElementById('detCompModal')) detCloseCompModal();
   });
   document.getElementById('detCompBtnSave').addEventListener('click', function() {
-    var comp   = detReadCompModal();
-    var ucIdx  = detEditing.ucIdx;
-    var cIdx   = detEditing.compIdx;
+    var comp  = detReadCompModal();
+    var ucIdx = detEditing.ucIdx;
+    var cIdx  = detEditing.compIdx;
     if (cIdx === -1) detUseCases[ucIdx].components.push(comp);
     else detUseCases[ucIdx].components[cIdx] = comp;
     detCloseCompModal();
     detRefresh();
+  });
+
+  // Flow-detail visibility driven by type selection
+  document.getElementById('dc-intType').addEventListener('change', detUpdateCompFlowDetail);
+
+  // Live preview — all inputs that affect the estimate
+  ['dc-intType','dc-impl',
+   'dc-operations','dc-apiConsole','dc-httpListener',
+   'dc-queues',
+   'dc-entities','dc-schedBidir',
+   'dc-tasks','dc-taskPeriod','dc-bizHours','dc-bizDays','dc-payloadKB'].forEach(function(id) {
+    document.getElementById(id).addEventListener('change', detUpdateCompPreview);
+    document.getElementById(id).addEventListener('input',  detUpdateCompPreview);
   });
 
   // Env settings — refresh on any change

@@ -83,15 +83,6 @@ function simpRenderSummary() {
   var minM   = totals.annualMsgMin / 1e6;
   var maxM   = totals.annualMsgMax / 1e6;
 
-  var extrasHtml = '';
-  if (rec.extraFlows > 0 || rec.extraMsgM > 0 || rec.extraDataGB > 0) {
-    extrasHtml = '<div class="pkg-extras">Additional capacity beyond package: ' +
-      (rec.extraFlows  > 0 ? rec.extraFlows + ' extra flows &nbsp;&bull;&nbsp;' : '') +
-      (rec.extraMsgM   > 0 ? rec.extraMsgM.toFixed(1) + 'M extra messages &nbsp;&bull;&nbsp;' : '') +
-      (rec.extraDataGB > 0 ? fmtGB(rec.extraDataGB) + ' extra data' : '') +
-      '</div>';
-  }
-
   el.innerHTML =
     '<div class="summary-grid">' +
       '<div class="summary-metric"><div class="label">Total Flows</div>' +
@@ -104,16 +95,7 @@ function simpRenderSummary() {
         '<div class="value">' + fmtGB(totals.annualDataMin) + '</div>' +
         '<div class="sub">min estimate</div></div>' +
     '</div>' +
-    '<div class="pkg-row">' +
-      '<div class="pkg-badge ' + (rec.name === 'Advanced' ? 'advanced' : '') + '">' + rec.name + '</div>' +
-      '<div class="pkg-details">' +
-        '<div class="pkg-name">Integration ' + rec.name + ' Package</div>' +
-        '<div class="pkg-price">' + fmtUSD(rec.totalListPrice) +
-          ' <span style="font-size:0.85rem;font-weight:400;color:#888;">/ year (list price, USD)</span></div>' +
-        '<div class="pkg-reason">' + rec.reasons.join(' &bull; ') + '</div>' +
-        extrasHtml +
-      '</div>' +
-    '</div>';
+    pkgBreakdownHtml(rec, totals.totalFlows, minM, totals.annualDataMin);
 }
 
 function simpRefresh() {

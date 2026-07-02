@@ -4,98 +4,184 @@
 // ============================================================
 
 function calcRow(row, numEnvs, reusabilityKey) {
-  const { intType, systems, bidir, bizObjects, tasks, payload } = row;
+  var intType    = row.intType;
+  var systems    = row.systems;
+  var bidir      = row.bidir;
+  var bizObjects = row.bizObjects;
+  var tasks      = row.tasks;
+  var payload    = row.payload;
 
-  // Require all dropdowns to be selected
-  if (!intType || !systems || !bizObjects || !tasks || !payload) {
-    return null;
-  }
+  if (!intType || !systems || !bizObjects || !tasks || !payload) return null;
 
-  const reductionFactor = REUSABILITY_TABLE[reusabilityKey] || 0;
-  const biDirMultiplier = bidir ? 2 : 1;
+  var reductionFactor  = REUSABILITY_TABLE[reusabilityKey] || 0;
+  var biDirMultiplier  = bidir ? 2 : 1;
 
   // --- Flows ---
-  const tshirt = TSHIRT_MATRIX[systems]?.[bizObjects];
+  var tshirt = TSHIRT_MATRIX[systems] && TSHIRT_MATRIX[systems][bizObjects];
   if (!tshirt) return null;
-  const flows = FLOW_COUNTS[intType]?.[tshirt] || 0;
+  var flows = (FLOW_COUNTS[intType] && FLOW_COUNTS[intType][tshirt]) || 0;
 
-  // --- Messages ---
-  const taskRange    = TASK_RANGES[tasks];
+  // --- Messages (use non-linear env multiplier) ---
+  var taskRange = TASK_RANGES[tasks];
   if (!taskRange) return null;
-  const msgMin = Math.round(taskRange.min * biDirMultiplier * (1 - reductionFactor) * numEnvs);
-  const msgMax = Math.round(taskRange.max * biDirMultiplier * (1 - reductionFactor) * numEnvs);
+  var envMult = ENV_MULTIPLIERS[numEnvs] || numEnvs; // fallback to raw count if out of range
+  var msgMin = Math.round(taskRange.min * biDirMultiplier * (1 - reductionFactor) * envMult);
+  var msgMax = Math.round(taskRange.max * biDirMultiplier * (1 - reductionFactor) * envMult);
 
   // --- Data throughput (GB) ---
   // factor: bidir=4 (2 directions × 2 transforms), unidir=2
-  const dataMult      = bidir ? 4 : 2;
-  const payloadRange  = PAYLOAD_RANGES[payload];
+  var dataMult     = bidir ? 4 : 2;
+  var payloadRange = PAYLOAD_RANGES[payload];
   if (!payloadRange) return null;
-  const dataMinGB = (msgMin * payloadRange.min) / 1048576 * dataMult;
-  const dataMaxGB = (msgMax * payloadRange.max) / 1048576 * dataMult;
+  var dataMinGB = (msgMin * payloadRange.min) / 1048576 * dataMult;
+  var dataMaxGB = (msgMax * payloadRange.max) / 1048576 * dataMult;
 
-  return { flows, msgMin, msgMax, dataMinGB, dataMaxGB };
+  return { flows: flows, msgMin: msgMin, msgMax: msgMax, dataMinGB: dataMinGB, dataMaxGB: dataMaxGB };
 }
 
 function calcTotals(rowResults) {
-  let totalFlows = 0, totalMsgMin = 0, totalMsgMax = 0;
-  let totalDataMin = 0, totalDataMax = 0;
+  var totalFlows = 0, totalMsgMin = 0, totalMsgMax = 0;
+  var totalDataMin = 0, totalDataMax = 0;
 
-  for (const r of rowResults) {
+  for (var i = 0; i < rowResults.length; i++) {
+    var r = rowResults[i];
     if (!r) continue;
-    totalFlows    += r.flows;
-    totalMsgMin   += r.msgMin;
-    totalMsgMax   += r.msgMax;
-    totalDataMin  += r.dataMinGB;
-    totalDataMax  += r.dataMaxGB;
+    totalFlows   += r.flows;
+    totalMsgMin  += r.msgMin;
+    totalMsgMax  += r.msgMax;
+    totalDataMin += r.dataMinGB;
+    totalDataMax += r.dataMaxGB;
   }
 
-  // Annualise messages (row calc returns monthly)
-  const annualMsgMin = totalMsgMin * 12;
-  const annualMsgMax = totalMsgMax * 12;
+  // Annualise (row calc returns monthly)
+  var annualMsgMin  = totalMsgMin  * 12;
+  var annualMsgMax  = totalMsgMax  * 12;
+  var annualDataMin = totalDataMin * 12;
+  var annualDataMax = totalDataMax * 12;
 
-  // Annualise data
-  const annualDataMin = totalDataMin * 12;
-  const annualDataMax = totalDataMax * 12;
-
-  return { totalFlows, annualMsgMin, annualMsgMax, annualDataMin, annualDataMax };
+  return { totalFlows: totalFlows, annualMsgMin: annualMsgMin, annualMsgMax: annualMsgMax,
+           annualDataMin: annualDataMin, annualDataMax: annualDataMax };
 }
 
 function recommendPackage(totals) {
-  const { totalFlows, annualMsgMin, annualDataMin } = totals;
-  const annualMsgMinM = annualMsgMin / 1e6;
+  var totalFlows    = totals.totalFlows;
+  var annualMsgMinM = totals.annualMsgMin / 1e6;
+  var annualDataMin = totals.annualDataMin;
+  var needsHA       = totals.needsHA || false;
 
-  const needsAdvanced =
-    totalFlows    > PACKAGES.Starter.flows      ||
-    annualMsgMinM > PACKAGES.Starter.messagesM  ||
+  var needsAdvanced =
+    needsHA                                        ||
+    totalFlows    > PACKAGES.Starter.flows         ||
+    annualMsgMinM > PACKAGES.Starter.messagesM     ||
     annualDataMin > PACKAGES.Starter.dataGB;
 
-  const pkg = needsAdvanced ? PACKAGES.Advanced : PACKAGES.Starter;
-  const name = needsAdvanced ? 'Advanced' : 'Starter';
+  var pkg  = needsAdvanced ? PACKAGES.Advanced : PACKAGES.Starter;
+  var name = needsAdvanced ? 'Advanced' : 'Starter';
 
-  // Reason
-  const reasons = [];
+  var reasons = [];
   if (needsAdvanced) {
-    if (totalFlows    > PACKAGES.Starter.flows)     reasons.push(`${totalFlows} flows > ${PACKAGES.Starter.flows} included`);
-    if (annualMsgMinM > PACKAGES.Starter.messagesM) reasons.push(`${fmtM(annualMsgMinM)} msgs > ${PACKAGES.Starter.messagesM}M included`);
-    if (annualDataMin > PACKAGES.Starter.dataGB)    reasons.push(`${fmtGB(annualDataMin)} data > ${PACKAGES.Starter.dataGB}GB included`);
+    if (needsHA)                                       reasons.push('HA required (Advanced only)');
+    if (totalFlows    > PACKAGES.Starter.flows)        reasons.push(totalFlows + ' flows > ' + PACKAGES.Starter.flows + ' included');
+    if (annualMsgMinM > PACKAGES.Starter.messagesM)    reasons.push(fmtM(annualMsgMinM) + ' msgs > ' + PACKAGES.Starter.messagesM + 'M included');
+    if (annualDataMin > PACKAGES.Starter.dataGB)       reasons.push(fmtGB(annualDataMin) + ' data > ' + fmtGB(PACKAGES.Starter.dataGB) + ' included');
   } else {
     reasons.push('within Starter limits');
   }
 
-  // Additional capacity costs
-  const extraFlows    = Math.max(0, totalFlows - pkg.flows);
-  const extraMsgM     = Math.max(0, annualMsgMinM - pkg.messagesM);
-  const extraDataGB   = Math.max(0, annualDataMin - pkg.dataGB);
-
-  const extraFlowCost  = extraFlows  > 0
-    ? extraFlows * pkg.extraFlowRate * Math.pow(extraFlows, FLOW_POWER_LAW.B)
+  // Extra flows — power law: total_cost = A × qty × qty^B = A × qty^(1+B)
+  var extraFlows    = Math.max(0, totalFlows - pkg.flows);
+  var extraFlowCost = extraFlows > 0
+    ? pkg.extraFlowRate * extraFlows * Math.pow(extraFlows, FLOW_POWER_LAW.B)
     : 0;
-  const extraMsgCost   = Math.ceil(extraMsgM)  * pkg.extraMsgRatePerM;
-  const extraDataCost  = extraDataGB * DATA_PRICE_PER_GB;
 
-  const totalListPrice = pkg.listPrice + extraFlowCost + extraMsgCost + extraDataCost;
+  // Extra messages — power law: same B exponent, A = rate per 1M
+  var extraMsgM    = Math.max(0, annualMsgMinM - pkg.messagesM);
+  var extraMsgCost = extraMsgM > 0
+    ? pkg.extraMsgRatePerM * extraMsgM * Math.pow(extraMsgM, MSG_POWER_LAW.B)
+    : 0;
 
-  return { name, pkg, reasons, extraFlows, extraMsgM, extraDataGB, totalListPrice };
+  // Extra data
+  var extraDataGB   = Math.max(0, annualDataMin - pkg.dataGB);
+  var extraDataCost = extraDataGB * DATA_PRICE_PER_GB;
+
+  var totalListPrice = pkg.listPrice + extraFlowCost + extraMsgCost + extraDataCost;
+
+  return { name: name, pkg: pkg, reasons: reasons,
+           extraFlows: extraFlows, extraMsgM: extraMsgM, extraDataGB: extraDataGB,
+           totalListPrice: totalListPrice };
+}
+
+// ---- Package breakdown card (shared by Simplified + Detailed) ----
+// rec        = result of recommendPackage()
+// totalFlows = number
+// msgM       = annual messages in millions
+// dataGB     = annual data in GB
+function pkgBreakdownHtml(rec, totalFlows, msgM, dataGB) {
+  var pkg = rec.pkg;
+
+  function statusIcon(used, included) {
+    return used <= included
+      ? '<span style="color:#2e7d32;font-weight:700;">&#10003;</span>'
+      : '<span style="color:#c62828;font-weight:700;">&#43;</span>';
+  }
+
+  function extraCell(extra, fmt) {
+    if (extra <= 0) return '<td class="col-metric" style="color:#bbb;">—</td>';
+    return '<td class="col-metric" style="color:#c62828;font-weight:700;">' + fmt + '</td>';
+  }
+
+  var haWarning = rec.reasons.indexOf('HA required (Advanced only)') >= 0
+    ? '<tr style="background:#fff8e1;"><td colspan="4" style="font-size:0.8rem;color:#795548;padding:8px 14px;">' +
+        '&#9888; HA is only available in Integration Advanced</td></tr>'
+    : '';
+
+  var omniIncluded = fmtM(pkg.omniCallsM);
+
+  return '<div class="pkg-row">' +
+    '<div class="pkg-badge ' + (rec.name === 'Advanced' ? 'advanced' : '') + '">' + rec.name + '</div>' +
+    '<div class="pkg-details" style="flex:1;">' +
+      '<div class="pkg-name">Integration ' + rec.name + ' Package</div>' +
+      '<div class="pkg-price">' + fmtUSD(rec.totalListPrice) +
+        ' <span style="font-size:0.85rem;font-weight:400;color:#888;">/ year (list price, USD)</span></div>' +
+      '<div class="pkg-reason" style="margin-bottom:12px;">' + rec.reasons.join(' &bull; ') + '</div>' +
+      '<div style="overflow-x:auto;">' +
+      '<table class="uc-table" style="font-size:0.82rem;">' +
+        '<thead><tr>' +
+          '<th>Metric</th>' +
+          '<th class="col-metric">Required</th>' +
+          '<th class="col-metric">Included</th>' +
+          '<th class="col-metric">Additional needed</th>' +
+        '</tr></thead>' +
+        '<tbody>' +
+          haWarning +
+          '<tr>' +
+            '<td>Flows</td>' +
+            '<td class="col-metric">' + statusIcon(totalFlows, pkg.flows) + ' ' + totalFlows + '</td>' +
+            '<td class="col-metric">' + pkg.flows + '</td>' +
+            extraCell(rec.extraFlows, rec.extraFlows + ' flows') +
+          '</tr>' +
+          '<tr>' +
+            '<td>Messages / year</td>' +
+            '<td class="col-metric">' + statusIcon(msgM, pkg.messagesM) + ' ' + fmtM(msgM) + '</td>' +
+            '<td class="col-metric">' + pkg.messagesM + 'M</td>' +
+            extraCell(rec.extraMsgM, fmtM(rec.extraMsgM) + ' msgs') +
+          '</tr>' +
+          '<tr>' +
+            '<td>Data throughput / year</td>' +
+            '<td class="col-metric">' + statusIcon(dataGB, pkg.dataGB) + ' ' + fmtGB(dataGB) + '</td>' +
+            '<td class="col-metric">' + fmtGB(pkg.dataGB) + '</td>' +
+            extraCell(rec.extraDataGB, fmtGB(rec.extraDataGB)) +
+          '</tr>' +
+          '<tr>' +
+            '<td>Omni / Flex GW calls / year</td>' +
+            '<td class="col-metric" style="color:#888;">—</td>' +
+            '<td class="col-metric">' + omniIncluded + '</td>' +
+            '<td class="col-metric" style="color:#bbb;">—</td>' +
+          '</tr>' +
+        '</tbody>' +
+      '</table></div>' +
+    '</div>' +
+  '</div>';
 }
 
 // ---- Formatting helpers ----
@@ -110,7 +196,8 @@ function fmtMRange(min, max) {
 }
 
 function fmtGB(val) {
-  if (val >= 1000) return (val / 1000).toFixed(1) + ' TB';
+  if (val >= 1000000) return (val / 1000000).toFixed(1) + ' PB';
+  if (val >= 1000)    return (val / 1000).toFixed(1) + ' TB';
   return val.toFixed(1) + ' GB';
 }
 
