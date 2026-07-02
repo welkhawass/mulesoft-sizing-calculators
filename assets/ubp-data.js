@@ -71,30 +71,34 @@ var REUSABILITY_TABLE = {
 // Source: Integration Composite SKUs slide + Data - Do not touch, K42:Q52
 var PACKAGES = {
   Starter: {
-    flows:             50,
-    messagesM:         5,        // 5 Million messages / year
-    dataGB:            10000,    // 10,000 GB data throughput / year
-    managedApisProd:   2,
-    managedApisNonProd:2,
-    governedApis:      2,
-    omniCallsM:        4,        // 4 Million Flex/Omni GW calls
-    hasHA:             false,    // HA not included in Starter
-    listPrice:         42000,
-    extraFlowRate:     360,
-    extraMsgRatePerM:  660
+    flows:              50,
+    messagesM:          5,        // 5 Million messages / year
+    dataGB:             10000,    // 10,000 GB data throughput / year
+    managedApisProd:    2,
+    managedApisNonProd: 2,
+    governedApis:       2,
+    omniCallsM:         4,        // 4 Million Flex/Omni GW calls
+    privateSpaces:      1,
+    networkConnections: 2,
+    hasHA:              false,    // HA not included in Starter
+    listPrice:          42000,
+    extraFlowRate:      360,
+    extraMsgRatePerM:   660
   },
   Advanced: {
-    flows:             200,
-    messagesM:         20,       // 20 Million messages / year
-    dataGB:            40000,    // 40,000 GB data throughput / year
-    managedApisProd:   10,
-    managedApisNonProd:10,
-    governedApis:      10,
-    omniCallsM:        20,       // 20 Million Flex/Omni GW calls
-    hasHA:             true,
-    listPrice:         120000,
-    extraFlowRate:     420,
-    extraMsgRatePerM:  750
+    flows:              200,
+    messagesM:          20,       // 20 Million messages / year
+    dataGB:             40000,    // 40,000 GB data throughput / year
+    managedApisProd:    10,
+    managedApisNonProd: 10,
+    governedApis:       10,
+    omniCallsM:         20,       // 20 Million Flex/Omni GW calls
+    privateSpaces:      2,
+    networkConnections: 4,
+    hasHA:              true,
+    listPrice:          120000,
+    extraFlowRate:      420,
+    extraMsgRatePerM:   750
   }
 };
 
@@ -127,6 +131,18 @@ var FLOW_POWER_LAW = { A: 420, B: -0.1076851047 };
 // Source: Data - Do not touch, B91:B92  (Mule Messages: A=750 Advanced / 660 Starter, B=-0.1912344768)
 var MSG_POWER_LAW = { B: -0.1912344768 };
 
-// Additional data throughput: $48 per 100 GB = $0.48 / GB
-// Source: Data - Do not touch, K50
-var DATA_PRICE_PER_GB = 48 / 100;
+// Additional data throughput: $48 per TB = $0.048 / GB
+// Source: List Prices tab, row 10
+var DATA_PRICE_PER_GB = 48 / 1000;
+
+// Platform add-on SKU prices (USD / year)
+// Source: List Prices tab (Meta Data V2)
+var ADDON_PRICES = {
+  partnerManager:              189000,  // flat per year
+  loadBalancer:                  7680,  // per unit
+  privateSpace:                 12000,  // per additional unit beyond package
+  networkConnection:             1200,  // per additional unit beyond package
+  anypointMQ500M:               39600,  // per 500M message pack
+  objectStore100M:              15000,  // per 100M operations/month pack
+  aehAccessRequests:               45   // per API Experience Hub access request
+};

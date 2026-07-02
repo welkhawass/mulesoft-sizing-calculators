@@ -7,6 +7,15 @@
 var detUseCases      = [];   // [{ name, components:[] }]
 var detEditing       = { ucIdx: -1, compIdx: -1 };
 var detConnectors    = [];   // [{ name, prodEnvs, nonProdEnvs }]
+var detAddons        = {     // platform add-ons (quantities)
+  partnerManager:    false,
+  loadBalancer:      0,
+  privateSpaceExtra: 0,
+  networkConnExtra:  0,
+  anypointMQpacks:   0,
+  objectStorePacks:  0,
+  aehAccessRequests: 0
+};
 
 // ── Environment settings (with defaults) ──
 function detGetEnvSettings() {
@@ -308,7 +317,15 @@ function detRenderSummary() {
     '</table></div>' +
     apiMgmtSection +
     pkgBreakdownHtml(rec, t.flows.total, t.msgs.total / 1e6, t.data.total) +
-    detConnectorSummaryHtml();
+    detAddonSummaryHtml(rec.name) +
+    (detAddonTotal(rec.name) > 0
+      ? '<div style="background:#e8f4fb;border-radius:6px;padding:14px 16px;display:flex;' +
+          'justify-content:space-between;align-items:center;margin-top:8px;border:1px solid #b3d9f0;">' +
+          '<span style="font-weight:700;font-size:1rem;color:#0070ad;">Grand Total (list price)</span>' +
+          '<span style="font-weight:700;font-size:1.2rem;color:#0070ad;">' +
+            fmtUSD(rec.totalListPrice + detAddonTotal(rec.name)) + ' / year</span>' +
+        '</div>'
+      : '');
 }
 
 // ── Premium Connectors — render section ──
@@ -364,46 +381,74 @@ function detRenderConnectors() {
     '</table>';
 }
 
-function detConnectorSummaryHtml() {
-  if (detConnectors.length === 0) return '';
-  var rows = detConnectors.map(function(c) {
-    var cost = (c.prodEnvs + c.nonProdEnvs) * PREMIUM_CONNECTOR_PRICE;
-    return '<tr><td>' + c.name + '</td>' +
-      '<td class="col-metric">' + c.prodEnvs + ' Prod + ' + c.nonProdEnvs + ' Non-Prod</td>' +
-      '<td class="col-metric">' + fmtUSD(cost) + '</td></tr>';
-  }).join('');
-  var total = detConnectors.reduce(function(s, c) {
+// ── Calculate total add-on cost (connectors + platform) ──
+function detAddonTotal(pkgName) {
+  var connTotal = detConnectors.reduce(function(s, c) {
     return s + (c.prodEnvs + c.nonProdEnvs) * PREMIUM_CONNECTOR_PRICE;
   }, 0);
+  var pkg = PACKAGES[pkgName];
+  var a   = detAddons;
+  var platformTotal =
+    (a.partnerManager    ? ADDON_PRICES.partnerManager                              : 0) +
+    (a.loadBalancer      > 0 ? a.loadBalancer      * ADDON_PRICES.loadBalancer      : 0) +
+    (a.privateSpaceExtra > 0 ? a.privateSpaceExtra * ADDON_PRICES.privateSpace      : 0) +
+    (a.networkConnExtra  > 0 ? a.networkConnExtra  * ADDON_PRICES.networkConnection : 0) +
+    (a.anypointMQpacks   > 0 ? a.anypointMQpacks   * ADDON_PRICES.anypointMQ500M   : 0) +
+    (a.objectStorePacks  > 0 ? a.objectStorePacks  * ADDON_PRICES.objectStore100M  : 0) +
+    (a.aehAccessRequests > 0 ? a.aehAccessRequests * ADDON_PRICES.aehAccessRequests : 0);
+  return connTotal + platformTotal;
+}
+
+// ── Render add-on summary in output ──
+function detAddonSummaryHtml(pkgName) {
+  var pkg  = PACKAGES[pkgName];
+  var a    = detAddons;
+  var rows = [];
+
+  // Premium connectors
+  detConnectors.forEach(function(c) {
+    var cost = (c.prodEnvs + c.nonProdEnvs) * PREMIUM_CONNECTOR_PRICE;
+    rows.push({ label: c.name, detail: c.prodEnvs + ' Prod + ' + c.nonProdEnvs + ' Non-Prod envs', cost: cost });
+  });
+
+  // Platform add-ons
+  if (a.partnerManager)
+    rows.push({ label: 'Partner Manager', detail: 'flat', cost: ADDON_PRICES.partnerManager });
+  if (a.loadBalancer > 0)
+    rows.push({ label: 'Load Balancer', detail: a.loadBalancer + ' unit(s)', cost: a.loadBalancer * ADDON_PRICES.loadBalancer });
+  if (a.privateSpaceExtra > 0)
+    rows.push({ label: 'Private Space (additional)', detail: a.privateSpaceExtra + ' beyond ' + pkg.privateSpaces + ' included', cost: a.privateSpaceExtra * ADDON_PRICES.privateSpace });
+  if (a.networkConnExtra > 0)
+    rows.push({ label: 'Network Connection (additional)', detail: a.networkConnExtra + ' beyond ' + pkg.networkConnections + ' included', cost: a.networkConnExtra * ADDON_PRICES.networkConnection });
+  if (a.anypointMQpacks > 0)
+    rows.push({ label: 'Anypoint MQ', detail: a.anypointMQpacks + ' × 500M pack(s)', cost: a.anypointMQpacks * ADDON_PRICES.anypointMQ500M });
+  if (a.objectStorePacks > 0)
+    rows.push({ label: 'Object Store', detail: a.objectStorePacks + ' × 100M/month pack(s)', cost: a.objectStorePacks * ADDON_PRICES.objectStore100M });
+  if (a.aehAccessRequests > 0)
+    rows.push({ label: 'API Experience Hub', detail: a.aehAccessRequests + ' access request(s)', cost: a.aehAccessRequests * ADDON_PRICES.aehAccessRequests });
+
+  if (rows.length === 0) return '';
+
+  var rowsHtml = rows.map(function(r) {
+    return '<tr><td>' + r.label + '</td>' +
+      '<td class="col-metric" style="color:#666;">' + r.detail + '</td>' +
+      '<td class="col-metric">' + fmtUSD(r.cost) + '</td></tr>';
+  }).join('');
+
+  var subtotal = rows.reduce(function(s, r) { return s + r.cost; }, 0);
+
   return '<div style="font-weight:700;font-size:0.82rem;color:#0070ad;text-transform:uppercase;' +
     'letter-spacing:0.04em;margin:16px 0 8px;">Add-on Products</div>' +
     '<div style="overflow-x:auto;margin-bottom:16px;">' +
     '<table class="uc-table" style="font-size:0.83rem;">' +
-      '<thead><tr><th>Premium Connector</th><th class="col-metric">Environments</th>' +
+      '<thead><tr><th>Add-on</th><th class="col-metric">Quantity</th>' +
         '<th class="col-metric">List Price / yr</th></tr></thead>' +
-      '<tbody>' + rows + '</tbody>' +
+      '<tbody>' + rowsHtml + '</tbody>' +
       '<tfoot><tr>' +
         '<td colspan="2" style="font-weight:700;text-align:right;padding:10px 14px;">Add-on subtotal</td>' +
-        '<td class="col-metric" style="font-weight:700;">' + fmtUSD(total) + '</td>' +
+        '<td class="col-metric" style="font-weight:700;">' + fmtUSD(subtotal) + '</td>' +
       '</tr></tfoot>' +
-    '</table></div>' +
-    '<div style="background:#f4f8fc;border-radius:6px;padding:12px 16px;display:flex;' +
-      'justify-content:space-between;align-items:center;margin-bottom:4px;">' +
-      '<span style="font-weight:700;font-size:0.95rem;color:#333;">Grand Total (list price)</span>' +
-      '<span style="font-weight:700;font-size:1.1rem;color:#0070ad;">' +
-        // Grand total computed inline — package price + connector add-ons
-        // We re-compute to avoid threading rec out of scope
-        (function() {
-          var t2   = detCalcTotals();
-          var rec2 = recommendPackage({
-            totalFlows: t2.flows.total, annualMsgMin: t2.msgs.total,
-            annualMsgMax: t2.msgs.total, annualDataMin: t2.data.total,
-            annualDataMax: t2.data.total, needsHA: t2.needsHA
-          });
-          return fmtUSD(rec2.totalListPrice + total);
-        })() +
-      ' / year</span>' +
-    '</div>';
+    '</table></div>';
 }
 
 function detShowConnNote(idx) {
