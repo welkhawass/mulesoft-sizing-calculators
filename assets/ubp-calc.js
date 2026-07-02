@@ -143,9 +143,9 @@ function pkgBreakdownHtml(rec, totalFlows, msgM, dataGB) {
 
   var omniIncluded = fmtM(pkg.omniCallsM);
 
-  return '<div class="pkg-row">' +
+  return '<div class="pkg-row" style="overflow-x:auto;">' +
     '<div class="pkg-badge ' + (rec.name === 'Advanced' ? 'advanced' : '') + '">' + rec.name + '</div>' +
-    '<div class="pkg-details" style="flex:1;">' +
+    '<div class="pkg-details" style="flex:1;min-width:0;">' +
       '<div class="pkg-name">Integration ' + rec.name + ' Package</div>' +
       '<div class="pkg-price">' + fmtUSD(rec.totalListPrice) +
         ' <span style="font-size:0.85rem;font-weight:400;color:#888;">/ year (list price, USD)</span></div>' +
@@ -186,7 +186,7 @@ function pkgBreakdownHtml(rec, totalFlows, msgM, dataGB) {
           '</tr>' +
           (rec.apiMgmtCost > 0
             ? '<tr style="background:#fff8e1;">' +
-                '<td colspan="4" style="font-size:0.8rem;color:#795548;padding:8px 14px;">' +
+                '<td colspan="4" style="font-size:0.8rem;color:#795548;padding:8px 14px;white-space:normal;">' +
                   '&#43; API Management overages: ' +
                   (rec.extraManagedProd > 0    ? rec.extraManagedProd    + ' extra managed (prod) '    : '') +
                   (rec.extraManagedNonProd > 0 ? rec.extraManagedNonProd + ' extra managed (non-prod) ' : '') +
