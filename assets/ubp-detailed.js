@@ -861,7 +861,7 @@ function detInitEvents() {
     var total   = prod + nonProd;
     var sel     = document.getElementById('numEnvs');
     // pick the closest available option (2–5); clamp to range
-    var clamped = Math.min(5, Math.max(2, total));
+    var clamped = Math.min(20, Math.max(1, total));
     sel.value = String(clamped);
     detRefresh();
   }
