@@ -254,8 +254,23 @@ function detTypeTag(type) {
 // ── Render summary ──
 function detRenderSummary() {
   var el = document.getElementById('detSummaryBody');
+
+  // Show add-ons-only summary when there are no use cases but add-ons exist
   if (detUseCases.length === 0) {
-    el.innerHTML = '<div class="summary-empty">Add use cases and components to see sizing results.</div>';
+    var addonOnlyTotal = detAddonTotal('Advanced');
+    if (addonOnlyTotal === 0) {
+      el.innerHTML = '<div class="summary-empty">Add use cases and components to see sizing results.</div>';
+      return;
+    }
+    el.innerHTML =
+      '<div style="font-size:0.85rem;color:#888;margin-bottom:16px;">No use cases added — showing add-on costs only.</div>' +
+      detAddonSummaryHtml('Advanced') +
+      '<div style="background:#e8f4fb;border-radius:6px;padding:14px 16px;display:flex;' +
+        'justify-content:space-between;align-items:center;margin-top:8px;border:1px solid #b3d9f0;">' +
+        '<span style="font-weight:700;font-size:1rem;color:#0070ad;">Add-on Total</span>' +
+        '<span style="font-weight:700;font-size:1.2rem;color:#0070ad;">' +
+          fmtUSD(addonOnlyTotal) + ' / year</span>' +
+      '</div>';
     return;
   }
 
@@ -825,11 +840,33 @@ function detInitEvents() {
   });
 
   // Env settings — refresh on any change
-  ['det-prodEnvs','det-nonProdEnvs','det-haReplicas','det-haNonProdEnvs','det-flowsBuffer',
+  ['det-haReplicas','det-haNonProdEnvs','det-flowsBuffer',
    'det-msgNonProdPct','det-msgBuffer','det-dataNonProdPct','det-dataBuffer',
    'det-omniNonProdPct','det-omniBuffer'].forEach(function(id) {
     document.getElementById(id).addEventListener('change', detRefresh);
   });
+
+  // Shared total envs → split into 1 prod + (n-1) non-prod
+  document.getElementById('numEnvs').addEventListener('change', function() {
+    var total = parseInt(this.value, 10) || 2;
+    document.getElementById('det-prodEnvs').value    = 1;
+    document.getElementById('det-nonProdEnvs').value = Math.max(1, total - 1);
+    detRefresh();
+  });
+
+  // Prod or non-prod change → update shared total
+  function syncTotalEnvs() {
+    var prod   = parseInt(document.getElementById('det-prodEnvs').value,    10) || 1;
+    var nonProd = parseInt(document.getElementById('det-nonProdEnvs').value, 10) || 1;
+    var total   = prod + nonProd;
+    var sel     = document.getElementById('numEnvs');
+    // pick the closest available option (2–5); clamp to range
+    var clamped = Math.min(5, Math.max(2, total));
+    sel.value = String(clamped);
+    detRefresh();
+  }
+  document.getElementById('det-prodEnvs').addEventListener('change',    syncTotalEnvs);
+  document.getElementById('det-nonProdEnvs').addEventListener('change', syncTotalEnvs);
 
   // Copy from simplified button
   document.getElementById('detBtnCopySimp').addEventListener('click', function() {
