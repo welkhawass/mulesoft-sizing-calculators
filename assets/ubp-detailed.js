@@ -626,6 +626,154 @@ function detDeleteComp(ucIdx, cIdx) {
   detRefresh();
 }
 
+// ── CSV Import ──
+
+var DET_CSV_INTTYPE_MAP = {
+  'api/microservices': 'API/Microservices', 'apimicroservices': 'API/Microservices',
+  'api':               'API/Microservices', 'microservices':    'API/Microservices',
+  'event-based':       'Event-Based',       'eventbased':       'Event-Based',
+  'event':             'Event-Based',
+  'schedule-based':    'Schedule-Based',    'schedulebased':    'Schedule-Based',
+  'schedule':          'Schedule-Based',    'scheduled':        'Schedule-Based'
+};
+
+var DET_CSV_PERIOD_MAP = {
+  'second':'Second','minute':'Minute','hour':'Hour','day':'Day','month':'Month','year':'Year'
+};
+
+function detParseCSVLine(line) {
+  var fields = [], field = '', inQuotes = false;
+  for (var i = 0; i < line.length; i++) {
+    var ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i+1] === '"') { field += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) { fields.push(field); field = ''; }
+    else field += ch;
+  }
+  fields.push(field);
+  return fields;
+}
+
+function detNormalizeCSVRow(obj, lineNum, errors) {
+  var ucName   = (obj['usecasename'] || obj['usecase'] || obj['uc'] || '').trim();
+  var compName = (obj['componentname'] || obj['component'] || obj['comp'] || '').trim();
+  if (!ucName)   { errors.push('Row ' + lineNum + ': missing useCaseName'); return null; }
+  if (!compName) { errors.push('Row ' + lineNum + ': missing componentName'); return null; }
+
+  var rawType = (obj['inttype'] || obj['integrationtype'] || obj['type'] || '').toLowerCase().replace(/[\s_]/g,'');
+  var intType = DET_CSV_INTTYPE_MAP[rawType];
+  if (!intType) { errors.push('Row ' + lineNum + ': unrecognised intType "' + rawType + '"'); return null; }
+
+  var rawImpl = (obj['impl'] || obj['implementation'] || 'mulesoft').toLowerCase().trim();
+  var impl    = (rawImpl === 'omnigw' || rawImpl === 'omni' || rawImpl === 'omni gw' || rawImpl === 'gateway') ? 'Omni GW' : 'MuleSoft';
+
+  var rawHA = (obj['ha'] || obj['requiresha'] || 'false').toLowerCase().trim();
+  var ha    = (rawHA === 'true' || rawHA === 'yes' || rawHA === '1' || rawHA === 'y');
+
+  var tasks      = parseFloat(obj['tasks'] || obj['numberoftasks'] || 0) || 0;
+  var rawPeriod  = (obj['taskperiod'] || obj['period'] || obj['timeperiod'] || 'month').toLowerCase().trim();
+  var taskPeriod = DET_CSV_PERIOD_MAP[rawPeriod] || 'Month';
+
+  var bizHours  = parseFloat(obj['bizhours']  || obj['businesshoursperday']  || 8)   || 8;
+  var bizDays   = parseFloat(obj['bizdays']   || obj['businessdaysperyr']    || 220) || 220;
+  var payloadKB = parseFloat(obj['payloadkb'] || obj['avgpayloadkb']         || 1)   || 1;
+
+  // Type-specific flow fields
+  var operations   = parseInt(obj['operations']   || obj['methods'] || 3, 10) || 3;
+  var apiConsole   = parseInt(obj['apiconsole']   || 1, 10);
+  if (isNaN(apiConsole)) apiConsole = 1;
+  var httpListener = parseInt(obj['httplistener'] || 1, 10);
+  if (isNaN(httpListener)) httpListener = 1;
+  var queues       = parseInt(obj['queues'] || obj['channels'] || 1, 10) || 1;
+  var entities     = parseInt(obj['entities'] || 1, 10) || 1;
+  var rawBidir     = (obj['schedbidir'] || obj['bidirectional'] || 'false').toLowerCase().trim();
+  var schedBidir   = (rawBidir === 'true' || rawBidir === 'yes' || rawBidir === '1');
+
+  return {
+    ucName: ucName, compName: compName,
+    comp: { name: compName, intType: intType, impl: impl, ha: ha,
+            tasks: tasks, taskPeriod: taskPeriod, bizHours: bizHours, bizDays: bizDays,
+            payloadKB: payloadKB, operations: operations, apiConsole: apiConsole,
+            httpListener: httpListener, queues: queues, entities: entities, schedBidir: schedBidir }
+  };
+}
+
+function detParseCSVText(text) {
+  text = text.replace(/^﻿/, '');
+  var lines = text.split(/\r?\n/);
+  var headers = null, rows = [], errors = [], dataLine = 0;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line || line.charAt(0) === '#') continue;
+    var fields = detParseCSVLine(line);
+    if (!headers) {
+      headers = fields.map(function(h) { return h.toLowerCase().trim().replace(/[^a-z0-9]/g,''); });
+      continue;
+    }
+    dataLine++;
+    var obj = {};
+    for (var j = 0; j < headers.length; j++) obj[headers[j]] = (fields[j] || '').trim();
+    var r = detNormalizeCSVRow(obj, dataLine, errors);
+    if (r) rows.push(r);
+  }
+  return { rows: rows, errors: errors };
+}
+
+function detApplyCSVRows(rows) {
+  rows.forEach(function(r) {
+    var existing = detUseCases.filter(function(u) { return u.name === r.ucName; })[0];
+    if (existing) {
+      existing.components.push(r.comp);
+    } else {
+      detUseCases.push({ name: r.ucName, components: [r.comp] });
+    }
+  });
+}
+
+function detShowImportResult(imported, errors) {
+  var el = document.getElementById('detImportResult');
+  if (!el) return;
+  if (imported === 0 && errors.length === 0) { el.style.display = 'none'; return; }
+  var msg = '';
+  if (imported > 0) msg += '✓ ' + imported + ' component' + (imported === 1 ? '' : 's') + ' imported.';
+  if (errors.length > 0)
+    msg += (imported > 0 ? '  ' : '') + '⚠ ' + errors.length + ' row' + (errors.length === 1 ? '' : 's') +
+           ' skipped: ' + errors.join('; ');
+  el.className = 'import-result ' + (errors.length > 0 ? 'import-result-warn' : 'import-result-ok');
+  el.innerHTML = msg +
+    '<button onclick="this.parentElement.style.display=\'none\'" ' +
+      'style="float:right;background:none;border:none;font-size:1rem;cursor:pointer;color:inherit;">×</button>';
+  el.style.display = 'block';
+}
+
+function detHandleCSVFile(file) {
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var result = detParseCSVText(e.target.result);
+    detApplyCSVRows(result.rows);
+    detRefresh();
+    detShowImportResult(result.rows.length, result.errors);
+  };
+  reader.readAsText(file);
+}
+
+function detDownloadTemplate() {
+  var lines = [
+    'useCaseName,componentName,intType,ha,impl,tasks,taskPeriod,bizHours,bizDays,payloadKB,operations,apiConsole,httpListener,queues,entities,schedBidir',
+    'Order Management,Product System API 1,API/Microservices,false,MuleSoft,5000,Month,24,365,1,3,1,1,,,',
+    'Order Management,Product System API 2,API/Microservices,true,MuleSoft,5000,Month,24,365,1,3,1,1,,,',
+    'Inventory Sync,Inventory Event,Event-Based,false,MuleSoft,5000,Month,24,365,1,,,,,2,',
+    'Nightly Jobs,Nightly Scheduler,Schedule-Based,false,MuleSoft,5000,Month,24,365,1,,,,,,3,false'
+  ];
+  var blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url; a.download = 'ubp-detailed-template.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ── Init events ──
 function detInitEvents() {
   // UC modal
@@ -695,6 +843,16 @@ function detInitEvents() {
     }
     detCopyFromSimplified();
   });
+
+  // CSV import
+  document.getElementById('detBtnImportCSV').addEventListener('click', function() {
+    document.getElementById('detCSVInput').click();
+  });
+  document.getElementById('detCSVInput').addEventListener('change', function(e) {
+    detHandleCSVFile(e.target.files[0]);
+    this.value = '';
+  });
+  document.getElementById('detBtnCSVTemplate').addEventListener('click', detDownloadTemplate);
 
   // Premium connector add button
   document.getElementById('detBtnAddConn').addEventListener('click', detAddConnector);

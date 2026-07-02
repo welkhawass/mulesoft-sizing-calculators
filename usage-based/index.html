@@ -43,6 +43,34 @@
       </div>
     </div>
 
+    <!-- Settings bar — shared across both tabs -->
+    <div class="settings-bar">
+      <div class="form-group screen-only">
+        <label for="customerName">Customer Name</label>
+        <input type="text" id="customerName" placeholder="e.g. Acme Corp" style="min-width:200px;" />
+      </div>
+      <div class="form-group screen-only">
+        <label for="numEnvs">Number of Environments</label>
+        <select id="numEnvs">
+          <option value="2">2</option>
+          <option value="3" selected>3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+      </div>
+      <div class="form-group screen-only">
+        <label for="reusability">Reusability Index</label>
+        <select id="reusability">
+          <option value="0%">0%</option>
+          <option value="1-15%" selected>1-15%</option>
+          <option value="16-30%">16-30%</option>
+          <option value="31-45%">31-45%</option>
+          <option value="46-60%">46-60%</option>
+        </select>
+      </div>
+      <div class="print-only-settings print-only" id="printSettings"></div>
+    </div>
+
     <!-- Mode tabs -->
     <div class="mode-tabs">
       <button class="mode-tab active" id="tabSimp" onclick="switchTab('simplified')">Simplified</button>
@@ -53,34 +81,6 @@
          SIMPLIFIED PANEL
     ══════════════════════════════════════════ -->
     <div id="panelSimplified">
-
-      <!-- Settings bar -->
-      <div class="settings-bar">
-        <div class="form-group screen-only">
-          <label for="customerName">Customer Name</label>
-          <input type="text" id="customerName" placeholder="e.g. Acme Corp" style="min-width:200px;" />
-        </div>
-        <div class="form-group screen-only">
-          <label for="numEnvs">Number of Environments</label>
-          <select id="numEnvs">
-            <option value="2">2</option>
-            <option value="3" selected>3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-        </div>
-        <div class="form-group screen-only">
-          <label for="reusability">Reusability Index</label>
-          <select id="reusability">
-            <option value="0%">0%</option>
-            <option value="1-15%" selected>1-15%</option>
-            <option value="16-30%">16-30%</option>
-            <option value="31-45%">31-45%</option>
-            <option value="46-60%">46-60%</option>
-          </select>
-        </div>
-        <div class="print-only-settings print-only" id="printSettings"></div>
-      </div>
 
       <!-- Use cases table -->
       <div class="table-card">
@@ -245,8 +245,14 @@
       <div class="table-card">
         <div class="table-card-header">
           <h3>Use Cases &amp; Components <span id="detUcCount" style="color:#aaa;font-weight:400;font-size:0.85rem;"></span></h3>
-          <button class="btn-add-uc" id="detBtnAddUC">+ Add Use Case</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn-csv-template" id="detBtnCSVTemplate">&#x2193; CSV Template</button>
+            <button class="btn-import-csv"   id="detBtnImportCSV">&#x2191; Import CSV</button>
+            <input  type="file" id="detCSVInput" accept=".csv,text/csv" style="display:none;" />
+            <button class="btn-add-uc"        id="detBtnAddUC">+ Add Use Case</button>
+          </div>
         </div>
+        <div id="detImportResult" class="import-result" style="display:none;"></div>
         <div id="detTableArea"></div>
       </div>
 
