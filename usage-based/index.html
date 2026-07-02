@@ -129,12 +129,6 @@
     ══════════════════════════════════════════ -->
     <div id="panelDetailed" style="display:none;">
 
-      <!-- Copy from simplified banner -->
-      <div class="copy-simp-banner" id="copySimpBanner">
-        <span>Copy your Simplified use cases into Detailed as a starting point?</span>
-        <button id="detBtnCopySimp">Copy from Simplified</button>
-      </div>
-
       <!-- Environment settings -->
       <div class="table-card" style="margin-bottom:20px;">
         <div class="table-card-header"><h3>Environment &amp; Buffer Settings</h3></div>
@@ -262,6 +256,7 @@
         <div class="table-card-header">
           <h3>Use Cases &amp; Components <span id="detUcCount" style="color:#aaa;font-weight:400;font-size:0.85rem;"></span></h3>
           <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn-csv-template" id="detBtnCopySimp">&#x21BA; Copy from Simplified</button>
             <button class="btn-csv-template" id="detBtnCSVTemplate">&#x2193; CSV Template</button>
             <button class="btn-import-csv"   id="detBtnImportCSV">&#x2191; Import CSV</button>
             <input  type="file" id="detCSVInput" accept=".csv,text/csv" style="display:none;" />
@@ -598,10 +593,10 @@ APIs to Govern            = APIs to Manage (Prod only)
   </div>
 
 
-  <script src="../assets/ubp-data.js?v=405ca55"></script>
-  <script src="../assets/ubp-calc.js?v=405ca55"></script>
-  <script src="../assets/ubp-simplified.js?v=405ca55"></script>
-  <script src="../assets/ubp-detailed.js?v=405ca55"></script>
+  <script src="../assets/ubp-data.js?v=5a5953e"></script>
+  <script src="../assets/ubp-calc.js?v=5a5953e"></script>
+  <script src="../assets/ubp-simplified.js?v=5a5953e"></script>
+  <script src="../assets/ubp-detailed.js?v=5a5953e"></script>
   <script>
 
     // ── Version badge ──
@@ -617,9 +612,6 @@ APIs to Govern            = APIs to Manage (Prod only)
       document.getElementById('pageTitle').textContent = isSimp
         ? 'Usage-Based Pricing — Simplified Sizing'
         : 'Usage-Based Pricing — Detailed Sizing';
-      // Show copy banner in detailed only when simplified has data
-      var banner = document.getElementById('copySimpBanner');
-      banner.style.display = (!isSimp && simpUseCases.length > 0) ? 'flex' : 'none';
     }
 
     // ── Methodology modal ──
